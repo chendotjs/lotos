@@ -1,5 +1,6 @@
-#include "misc.h"
+#define _GNU_SOURCE
 #include "server.h"
+#include "misc.h"
 #include <dirent.h>
 #include <stdlib.h>
 #include <unistd.h>

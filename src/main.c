@@ -16,5 +16,5 @@ int main(int argc, char *argv[]) {
     exit(ERROR);
   }
 
-  return 0;
+  return OK;
 }
