@@ -2,6 +2,9 @@
 #include "server.h"
 #include "misc.h"
 #include <dirent.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -12,6 +15,11 @@ config_t server_config = {
     .worker = 4,
     .rootdir = NULL,
 };
+
+int config_parse(int argc, char *argv[]);
+int startup(uint16_t port);
+
+static void sigint_handler(int signum);
 
 int config_parse(int argc, char *argv[]) {
   int c;
@@ -41,6 +49,22 @@ int config_parse(int argc, char *argv[]) {
       (dirp = opendir(server_config.rootdir)) != NULL) {
     closedir(dirp);
     return OK;
-  } else
+  } else {
+    perror(server_config.rootdir);
     return ERROR;
+  }
+}
+
+static void sigint_handler(int signum) {
+  if (signum == SIGINT) {
+    lotos_log(LOG_INFO, "lotos gracefully exit...");
+    kill(-getpid(), SIGINT);
+    exit(0);
+  }
+}
+
+// TODO: add socklib
+int startup(uint16_t port) {
+  signal(SIGINT, sigint_handler);
+  return OK;
 }
