@@ -6,6 +6,8 @@ typedef enum { TRUE = 1, FALSE = 0 } bool;
 #define ERROR (-1)
 #define OK (0)
 
+#define CRLF "\r\n"
+
 #define ABORT_ON(cond, msg)                                                    \
   do {                                                                         \
     if (cond) {                                                                \
