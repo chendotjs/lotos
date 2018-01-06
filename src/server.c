@@ -25,11 +25,11 @@ config_t server_config = {
 };
 
 int epoll_fd = -1;
-static int listen_fd;
+int listen_fd = -1;
 
 static void sigint_handler(int signum);
 static int make_server_socket(uint16_t port, int backlog);
-static int add_listen_fd(int fd);
+static int add_listen_fd();
 
 int config_parse(int argc, char *argv[]) {
   int c;
@@ -55,7 +55,8 @@ int config_parse(int argc, char *argv[]) {
     }
   }
   DIR *dirp = NULL;
-  if (server_config.rootdir != NULL && (dirp = opendir(server_config.rootdir)) != NULL) {
+  if (server_config.rootdir != NULL &&
+      (dirp = opendir(server_config.rootdir)) != NULL) {
     closedir(dirp);
     return OK;
   } else {
@@ -81,7 +82,7 @@ int server_setup(uint16_t port) {
   epoll_fd = lotos_epoll_create(0);
   ABORT_ON(epoll_fd == ERROR, "lotos_epoll_create");
 
-  ABORT_ON(add_listen_fd(listen_fd) == ERROR, "add_listen_fd");
+  ABORT_ON(add_listen_fd() == ERROR, "add_listen_fd");
   return OK;
 }
 
@@ -115,8 +116,10 @@ static int make_server_socket(uint16_t port, int backlog) {
   return listen_fd;
 }
 
-static int add_listen_fd(int fd) {
+static int add_listen_fd() {
+  set_fd_nonblocking(listen_fd);
   struct epoll_event ev;
-  set_fd_nonblocking(fd);
-  return lotos_epoll_add(epoll_fd, fd, EPOLLIN, &ev);
+  ev.data.ptr = &listen_fd;
+  ev.events = EPOLLIN;
+  return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_fd, &ev);
 }

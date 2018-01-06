@@ -21,8 +21,8 @@ void lotos_log(int priority, const char *format, ...) {
   }
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
-  fprintf(fp, "[%4d-%02d-%02d %02d:%02d:%02d]", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-          tm.tm_hour, tm.tm_min, tm.tm_sec);
+  fprintf(fp, "[%4d-%02d-%02d %02d:%02d:%02d]", tm.tm_year + 1900,
+          tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
   color_prefix == NULL ? 0 : fprintf(fp, "%s", color_prefix);
   va_list args;

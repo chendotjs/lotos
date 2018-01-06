@@ -12,10 +12,12 @@ typedef struct {
 } config_t;
 
 extern config_t server_config;
-extern int epoll_fd;
+extern int epoll_fd;  /* epoll fd */
+extern int listen_fd; /* server listen fd */
 
-extern int config_parse(int argc, char *argv[]); /* parse command line options */
-extern int server_setup(uint16_t port);          /* bind and listen */
-extern int server_shutdown();                    /* server shutdown */
+extern int config_parse(int argc,
+                        char *argv[]);  /* parse command line options */
+extern int server_setup(uint16_t port); /* bind and listen */
+extern int server_shutdown();           /* server shutdown */
 
 #endif

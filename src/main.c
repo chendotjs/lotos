@@ -1,6 +1,7 @@
 #include "lotos_epoll.h"
 #include "misc.h"
 #include "server.h"
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,15 +45,32 @@ int main(int argc, char *argv[]) {
 
 work:;
   int nfds;
+  int i;
 
   server_setup(server_config.port);
 
   // TODO: add listen_fd to epoll and test slow_client whether will trigger
   while (TRUE) {
+    /**
+     * nfds is number of file descriptors ready for the requested I/O or zero
+     * if timeout
+     */
     nfds = lotos_epoll_wait(epoll_fd, lotos_events, MAX_EVENTS, 40);
-    ERR_ON(nfds == ERROR, "lotos_epoll_wait");
-    if (nfds > 0)
-      printf("nfds: %d\n", nfds);
+    if (nfds == ERROR) {
+      // if not caused by signal, cannot recover
+      ERR_ON(errno != EINTR, "lotos_epoll_wait");
+    }
+
+    for (i = 0; i < nfds; i++) {
+      int fd = *((int *)(lotos_events[i].data.ptr));
+      if (fd == listen_fd) {
+        // accept connection
+        printf("recv connection: %d %d %d\n", listen_fd, i, nfds);
+      } else {
+        // handle connection
+
+      } // else
+    }   // for loop
   }
 
   close(epoll_fd);

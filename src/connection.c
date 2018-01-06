@@ -2,6 +2,8 @@
 #include "misc.h"
 #include <fcntl.h>
 
+connection_t *lotos_connections[MAX_CONNECTION];
+
 int set_fd_nonblocking(int fd) {
   int flag = fcntl(fd, F_GETFL, 0);
   ABORT_ON(flag == ERROR, "fcntl: F_GETFL");
