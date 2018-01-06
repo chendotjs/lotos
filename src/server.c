@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
-#include "misc.h"
 #include "server.h"
+#include "misc.h"
 #include <dirent.h>
 #include <errno.h>
 #include <netdb.h>
@@ -22,7 +22,7 @@ config_t server_config = {
 };
 
 extern int config_parse(int argc, char *argv[]);
-extern int startup(uint16_t port);
+extern int server_setup(uint16_t port);
 
 static void sigint_handler(int signum);
 static int make_server_socket(uint16_t port, int backlog);
@@ -51,8 +51,7 @@ int config_parse(int argc, char *argv[]) {
     }
   }
   DIR *dirp = NULL;
-  if (server_config.rootdir != NULL &&
-      (dirp = opendir(server_config.rootdir)) != NULL) {
+  if (server_config.rootdir != NULL && (dirp = opendir(server_config.rootdir)) != NULL) {
     closedir(dirp);
     return OK;
   } else {
@@ -69,8 +68,8 @@ static void sigint_handler(int signum) {
   }
 }
 
-//TODO: add epoll and test slow_client whether will trigger
-int startup(uint16_t port) {
+// TODO: add epoll and test slow_client whether will trigger
+int server_setup(uint16_t port) {
   signal(SIGINT, sigint_handler);
 
   int listen_fd;

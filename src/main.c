@@ -9,7 +9,7 @@
 
 static void usage(const char *executable) {
   printf("Usage: %s -r html_root_dir [-p port] "
-         "[-d] [-t timeout] [-w worker_num]\n",
+         "[-t timeout] [-w worker_num] [-d (debug mode)]\n",
          executable);
 }
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   }
 
 work:;
-  startup(server_config.port);
+  server_setup(server_config.port);
   while (TRUE) {
     sleep(1);
     lotos_log(LOG_ERR, "%s", "err");

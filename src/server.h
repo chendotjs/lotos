@@ -13,7 +13,7 @@ typedef struct {
 
 extern config_t server_config;
 
-extern int config_parse(int argc, char *argv[]);
-extern int startup(uint16_t port);
+extern int config_parse(int argc, char *argv[]); /* parse command line options */
+extern int server_setup(uint16_t port);          /* bind and listen */
 
 #endif
