@@ -1,7 +1,7 @@
 CFLAGS=-g -std=c99 -Wall
 OPTFLAGS=
 
-lotos : server.o main.o misc.o lotos_epoll.o
+lotos : server.o main.o misc.o lotos_epoll.o connection.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 format :

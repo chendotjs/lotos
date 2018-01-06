@@ -1,5 +1,7 @@
 #ifndef _MISC_H__
 #define _MISC_H__
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef enum { TRUE = 1, FALSE = 0 } bool;
 

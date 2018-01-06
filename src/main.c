@@ -1,3 +1,4 @@
+#include "lotos_epoll.h"
 #include "misc.h"
 #include "server.h"
 #include <signal.h>
@@ -42,12 +43,19 @@ int main(int argc, char *argv[]) {
   }
 
 work:;
+  int nfds;
+
   server_setup(server_config.port);
+
+  // TODO: add listen_fd to epoll and test slow_client whether will trigger
   while (TRUE) {
-    sleep(1);
-    lotos_log(LOG_ERR, "%s", "err");
-    lotos_log(LOG_INFO, "%d", time(NULL));
+    nfds = lotos_epoll_wait(epoll_fd, lotos_events, MAX_EVENTS, 40);
+    ERR_ON(nfds == ERROR, "lotos_epoll_wait");
+    if (nfds > 0)
+      printf("nfds: %d\n", nfds);
   }
 
+  close(epoll_fd);
+  server_shutdown();
   return OK;
 }

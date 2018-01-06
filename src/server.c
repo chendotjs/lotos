@@ -1,5 +1,7 @@
 #define _GNU_SOURCE
 #include "server.h"
+#include "connection.h"
+#include "lotos_epoll.h"
 #include "misc.h"
 #include <dirent.h>
 #include <errno.h>
@@ -9,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -21,11 +24,12 @@ config_t server_config = {
     .rootdir = NULL,
 };
 
-extern int config_parse(int argc, char *argv[]);
-extern int server_setup(uint16_t port);
+int epoll_fd = -1;
+static int listen_fd;
 
 static void sigint_handler(int signum);
 static int make_server_socket(uint16_t port, int backlog);
+static int add_listen_fd(int fd);
 
 int config_parse(int argc, char *argv[]) {
   int c;
@@ -62,21 +66,26 @@ int config_parse(int argc, char *argv[]) {
 
 static void sigint_handler(int signum) {
   if (signum == SIGINT) {
-    lotos_log(LOG_INFO, "lotos gracefully exit...");
+    lotos_log(LOG_INFO, "lotos(%u) gracefully exit...", getpid());
     kill(-getpid(), SIGINT);
     exit(0);
   }
 }
 
-// TODO: add epoll and test slow_client whether will trigger
 int server_setup(uint16_t port) {
   signal(SIGINT, sigint_handler);
 
-  int listen_fd;
   listen_fd = make_server_socket(port, 1024);
   ABORT_ON(listen_fd == ERROR, "make_server_socket");
+
+  epoll_fd = lotos_epoll_create(0);
+  ABORT_ON(epoll_fd == ERROR, "lotos_epoll_create");
+
+  ABORT_ON(add_listen_fd(listen_fd) == ERROR, "add_listen_fd");
   return OK;
 }
+
+int server_shutdown() { return close(listen_fd); }
 
 static int make_server_socket(uint16_t port, int backlog) {
   int listen_fd;
@@ -104,4 +113,10 @@ static int make_server_socket(uint16_t port, int backlog) {
   if (listen(listen_fd, backlog) != OK)
     return ERROR;
   return listen_fd;
+}
+
+static int add_listen_fd(int fd) {
+  struct epoll_event ev;
+  set_fd_nonblocking(fd);
+  return lotos_epoll_add(epoll_fd, fd, EPOLLIN, &ev);
 }
