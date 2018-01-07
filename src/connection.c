@@ -15,7 +15,7 @@ static int heap_size = 0;
 #define LCHILD(x) (((x) << 1) + 1)
 #define RCHILD(x) (LCHILD(x) + 1)
 #define PARENT(x) ((x - 1) >> 1)
-#define INHEAP(n, x) (((-1) < (i)) && ((i) < (n)))
+#define INHEAP(n, x) (((-1) < (x)) && ((x) < (n)))
 
 inline static void c_swap(int x, int y) {
   assert(x >= 0 && x < heap_size && y >= 0 && y < heap_size);
@@ -40,13 +40,37 @@ static void heap_bubble_up(int idx) {
   }
 }
 
-//TODO: a bit confusing...
-/* used for extracting */
-static void heap_bubble_down(int idx) {}
+/* used for extracting or active_time update larger */
+static void heap_bubble_down(int idx) {
+  while (TRUE) {
+    int proper_child;
+    int lchild = INHEAP(heap_size, LCHILD(idx)) ? LCHILD(idx) : (heap_size + 1);
+    int rchild = INHEAP(heap_size, RCHILD(idx)) ? RCHILD(idx) : (heap_size + 1);
+    if (lchild > heap_size && rchild > heap_size) { // no children
+      break;
+    } else if (INHEAP(heap_size, lchild) && INHEAP(heap_size, rchild)) {
+      proper_child = lotos_connections[lchild]->active_time <
+                             lotos_connections[rchild]->active_time
+                         ? lchild
+                         : rchild;
+    } else if (lchild > heap_size) {
+      proper_child = rchild;
+    } else {
+      proper_child = lchild;
+    }
+    // idx is the smaller than children
+    if (lotos_connections[idx]->active_time <=
+        lotos_connections[proper_child]->active_time)
+      break;
+    assert(INHEAP(heap_size, proper_child));
+    c_swap(idx, proper_child);
+    idx = proper_child;
+  }
+}
 
 static int heap_insert(connection_t *c) {
   if (heap_size >= MAX_CONNECTION) {
-    return  ERROR;
+    return ERROR;
   }
   lotos_connections[heap_size++] = c;
   c->heap_idx = heap_size - 1;
