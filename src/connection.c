@@ -6,9 +6,55 @@
 #include <fcntl.h>
 #include <time.h>
 
+/**************************  heap operation start  ****************************/
+
 /* lotos_connections is seen as a binary min heap */
 connection_t *lotos_connections[MAX_CONNECTION] = {0};
 static int heap_size = 0;
+
+#define LCHILD(x) (((x) << 1) + 1)
+#define RCHILD(x) (LCHILD(x) + 1)
+#define PARENT(x) ((x - 1) >> 1)
+#define INHEAP(n, x) (((-1) < (i)) && ((i) < (n)))
+
+inline static void c_swap(int x, int y) {
+  assert(x >= 0 && x < heap_size && y >= 0 && y < heap_size);
+  connection_t *tmp = lotos_connections[x];
+  lotos_connections[x] = lotos_connections[y];
+  lotos_connections[y] = tmp;
+  // update heap_idx
+  lotos_connections[x]->heap_idx = y;
+  lotos_connections[y]->heap_idx = x;
+}
+
+/* used for inserting */
+static void heap_bubble_up(int idx) {
+  while (PARENT(idx) >= 0) {
+    int fidx = PARENT(idx); // fidx is father of idx;
+    connection_t *c = lotos_connections[idx];
+    connection_t *fc = lotos_connections[fidx];
+    if (c->active_time >= fc->active_time)
+      break;
+    c_swap(idx, fidx);
+    idx = fidx;
+  }
+}
+
+//TODO: a bit confusing...
+/* used for extracting */
+static void heap_bubble_down(int idx) {}
+
+static int heap_insert(connection_t *c) {
+  if (heap_size >= MAX_CONNECTION) {
+    return  ERROR;
+  }
+  lotos_connections[heap_size++] = c;
+  c->heap_idx = heap_size - 1;
+  heap_bubble_up(heap_size - 1);
+  return 0;
+}
+
+/**************************  heap operation end  ******************************/
 
 connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
   // Too many malloc would be slow
@@ -51,10 +97,7 @@ int connection_register(connection_t *c) {
   if (heap_size >= MAX_CONNECTION) {
     return ERROR;
   }
-  lotos_connections[heap_size++] = c;
-  // TODO: heap adjust
-
-  return OK;
+  return heap_insert(c);
 }
 
 // TODO: close connection, free memory
