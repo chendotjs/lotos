@@ -24,8 +24,8 @@ inline static void c_swap(int x, int y) {
   lotos_connections[x] = lotos_connections[y];
   lotos_connections[y] = tmp;
   // update heap_idx
-  lotos_connections[x]->heap_idx = y;
-  lotos_connections[y]->heap_idx = x;
+  lotos_connections[x]->heap_idx = x;
+  lotos_connections[y]->heap_idx = y;
 }
 
 /* used for inserting */
@@ -79,6 +79,18 @@ static int heap_insert(connection_t *c) {
   return 0;
 }
 
+static void heap_print() {
+  connection_t *c;
+  int i;
+  printf("----------------heap---------------\n");
+  for (i = 0; i < heap_size; i++) {
+    c = lotos_connections[i];
+    printf("[%2d] %p fd: %2d heap_idx: %2d active_time: %lu\n", i, c, c->fd,
+           c->heap_idx, c->active_time);
+  }
+  printf("----------------heap---------------\n");
+}
+
 /**************************  heap operation end  ******************************/
 
 connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
@@ -113,6 +125,7 @@ connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
   uint16_t port;
   get_internet_address(ip_addr, 32, &port, &c->saddr);
   printf("fd: %2d %s:%u\n", fd, ip_addr, port);
+  printf("malloc %p %d\n", c, heap_size);
 #endif
 
   return c;
@@ -147,6 +160,10 @@ void connection_prune() {
   while (heap_size > 0) {
     connection_t *c = lotos_connections[0];
     if (time(NULL) - c->active_time >= server_config.timeout) {
+#ifndef NDEBUG
+      // heap_print();
+      printf("prune %p %d\n", c, heap_size);
+#endif
       connection_close(c);
     } else
       break;

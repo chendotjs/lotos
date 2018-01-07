@@ -19,8 +19,8 @@ inline static void c_swap(int x, int y) {
   lotos_connections[x] = lotos_connections[y];
   lotos_connections[y] = tmp;
   // update heap_idx
-  lotos_connections[x]->heap_idx = y;
-  lotos_connections[y]->heap_idx = x;
+  lotos_connections[x]->heap_idx = x;
+  lotos_connections[y]->heap_idx = y;
 }
 
 /* used for inserting */
