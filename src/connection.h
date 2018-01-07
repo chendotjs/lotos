@@ -15,8 +15,10 @@ typedef struct {
   time_t active_time;       /* connection accpet time */
 } connection_t;
 
-extern int connection_accept(int fd, struct sockaddr_in *paddr);
+extern connection_t *connection_accept(int fd, struct sockaddr_in *paddr);
 extern int connection_register(connection_t *c);
+extern int connection_close(connection_t *c);
+
 
 extern int set_fd_nonblocking(int fd);
 
