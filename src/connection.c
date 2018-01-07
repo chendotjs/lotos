@@ -124,6 +124,15 @@ int connection_register(connection_t *c) {
   return heap_insert(c);
 }
 
+void connection_unregister(connection_t *c) {
+  assert(heap_size >= 1);
+  lotos_connections[c->heap_idx] = lotos_connections[heap_size - 1];
+  lotos_connections[c->heap_idx]->heap_idx = c->heap_idx;
+  heap_size--;
+  heap_bubble_down(c->heap_idx);
+}
+
+
 // TODO: close connection, free memory
 int connection_close(connection_t *c) {
   if (c == NULL)

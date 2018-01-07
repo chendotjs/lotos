@@ -18,6 +18,7 @@ typedef struct {
 
 extern connection_t *connection_accept(int fd, struct sockaddr_in *paddr);
 extern int connection_register(connection_t *c);
+extern void connection_unregister(connection_t *c);
 extern int connection_close(connection_t *c);
 
 extern int set_fd_nonblocking(int fd);

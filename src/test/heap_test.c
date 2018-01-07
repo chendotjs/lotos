@@ -197,5 +197,11 @@ int main(int argc, char const *argv[]) {
     int ans[] = {0, 4, 5, 9, 6, 10};
     TEST_BUBBLE_DOWN(arr, ans, sizeof(arr) / sizeof(int), 2, 10);
   }
+
+  {
+    int arr[] = {1};
+    int ans[] = {10};
+    TEST_BUBBLE_DOWN(arr, ans, sizeof(arr) / sizeof(int), 0, 10);
+  }
   return 0;
 }
