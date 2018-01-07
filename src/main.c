@@ -71,7 +71,8 @@ work:;
 
       } // else
     }   // for loop
-  }     // while
+    connection_prune(); /* prune expired connections */
+  } // while
 
   close(epoll_fd);
   server_shutdown();

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <time.h>
+#include <unistd.h>
 
 /**************************  heap operation start  ****************************/
 
@@ -132,12 +133,24 @@ void connection_unregister(connection_t *c) {
   heap_bubble_down(c->heap_idx);
 }
 
-
-// TODO: close connection, free memory
+// close connection, free memory
 int connection_close(connection_t *c) {
   if (c == NULL)
     return OK;
+  close(c->fd);
+  connection_unregister(c);
+  free(c);
   return OK;
+}
+
+void connection_prune() {
+  while (heap_size > 0) {
+    connection_t *c = lotos_connections[0];
+    if (time(NULL) - c->active_time >= server_config.timeout) {
+      connection_close(c);
+    } else
+      break;
+  }
 }
 
 int set_fd_nonblocking(int fd) {
