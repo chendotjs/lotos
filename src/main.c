@@ -65,13 +65,13 @@ work:;
       int fd = *((int *)(lotos_events[i].data.ptr));
       if (fd == listen_fd) {
         // accept connection
-        printf("recv connection: %d %d %d\n", listen_fd, i, nfds);
+        server_accept(listen_fd);
       } else {
         // handle connection
 
       } // else
     }   // for loop
-  }
+  }     // while
 
   close(epoll_fd);
   server_shutdown();

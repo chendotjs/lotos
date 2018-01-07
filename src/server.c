@@ -1,8 +1,9 @@
 #define _GNU_SOURCE
-#include "server.h"
 #include "connection.h"
 #include "lotos_epoll.h"
 #include "misc.h"
+#include "server.h"
+#include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
 #include <netdb.h>
@@ -88,6 +89,16 @@ int server_setup(uint16_t port) {
 
 int server_shutdown() { return close(listen_fd); }
 
+int server_accept(int listen_fd) {
+  int conn_fd;
+  static struct sockaddr_in saddr;
+  socklen_t saddrlen = sizeof(struct sockaddr_in);
+  while ((conn_fd = accept(listen_fd, &saddr, &saddrlen)) != ERROR) {
+    connection_accept(conn_fd, &saddr);
+  }
+  return 0;
+}
+
 static int make_server_socket(uint16_t port, int backlog) {
   int listen_fd;
   struct sockaddr_in saddr;
@@ -122,4 +133,11 @@ static int add_listen_fd() {
   ev.data.ptr = &listen_fd;
   ev.events = EPOLLIN;
   return epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_fd, &ev);
+}
+
+int get_internet_address(char *host, int len, uint16_t *pport,
+                   struct sockaddr_in *paddr) {
+  strncpy(host, inet_ntoa(paddr->sin_addr), len);
+  *pport = ntohs(paddr->sin_port);
+  return 0;
 }
