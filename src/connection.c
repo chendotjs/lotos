@@ -146,10 +146,16 @@ void connection_unregister(connection_t *c) {
   heap_bubble_down(c->heap_idx);
 }
 
-// close connection, free memory
+/* close connection, free memory */
 int connection_close(connection_t *c) {
   if (c == NULL)
     return OK;
+  /*
+   * explicitly delete fd from epoll_set, see `man 7 epoll` Q6
+   * Q6  Will closing a file descriptor cause it to be removed from all epoll
+   * sets automatically?
+   */
+  lotos_epoll_del(epoll_fd, c, 0, NULL);
   close(c->fd);
   connection_unregister(c);
   free(c);

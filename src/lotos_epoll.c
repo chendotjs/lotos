@@ -1,5 +1,5 @@
-#include "lotos_epoll.h"
 #include "connection.h"
+#include "lotos_epoll.h"
 #include "misc.h"
 #include <sys/epoll.h>
 
@@ -21,8 +21,8 @@ int lotos_epoll_mod(int epoll_fd, connection_t *pconn, uint32_t events,
 
 int lotos_epoll_del(int epoll_fd, connection_t *pconn, uint32_t events,
                     struct epoll_event *pev) {
-  FILL_EPOLL_EVENT(pev, pconn, events);
-  return epoll_ctl(epoll_fd, EPOLL_CTL_DEL, pconn->fd, pev);
+  (void)pev; // make compiler happy
+  return epoll_ctl(epoll_fd, EPOLL_CTL_DEL, pconn->fd, NULL);
 }
 
 inline int lotos_epoll_wait(int epoll_fd, struct epoll_event *events,
