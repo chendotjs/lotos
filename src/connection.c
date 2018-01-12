@@ -176,6 +176,20 @@ void connection_prune() {
   }
 }
 
+inline bool connecion_is_expired(connection_t *c) {
+  return (time(NULL) - c->active_time > server_config.timeout);
+}
+
+void connecion_set_reactivated(connection_t *c) {
+  c->active_time = time(NULL);
+  heap_bubble_down(c->heap_idx);
+}
+
+void connecion_set_expired(connection_t *c) {
+  c->active_time = 0; // very old time
+  heap_bubble_up(c->heap_idx);
+}
+
 int set_fd_nonblocking(int fd) {
   int flag = fcntl(fd, F_GETFL, 0);
   ABORT_ON(flag == ERROR, "fcntl: F_GETFL");

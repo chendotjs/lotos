@@ -1,5 +1,5 @@
-#include "connection.h"
 #include "lotos_epoll.h"
+#include "connection.h"
 #include "misc.h"
 #include <sys/epoll.h>
 

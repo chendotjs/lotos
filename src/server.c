@@ -1,8 +1,8 @@
 #define _GNU_SOURCE
+#include "server.h"
 #include "connection.h"
 #include "lotos_epoll.h"
 #include "misc.h"
-#include "server.h"
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
@@ -136,7 +136,7 @@ static int add_listen_fd() {
 }
 
 int get_internet_address(char *host, int len, uint16_t *pport,
-                   struct sockaddr_in *paddr) {
+                         struct sockaddr_in *paddr) {
   strncpy(host, inet_ntoa(paddr->sin_addr), len);
   *pport = ntohs(paddr->sin_port);
   return 0;

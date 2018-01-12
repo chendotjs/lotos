@@ -1,6 +1,7 @@
 #include "lotos_epoll.h"
 #include "misc.h"
 #include "server.h"
+#include <assert.h>
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -68,10 +69,19 @@ work:;
         server_accept(listen_fd);
       } else {
         // handle connection
-
+        connection_t *c = lotos_events[i].data.ptr;
+        int status;
+        assert(c != NULL);
+        if (!connecion_is_expired(c) && CONN_IS_IN(c)) {
+          // recv
+        }
+        if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
+          // send
+        }
       } // else
     }   // for loop
-    connection_prune(); /* prune expired connections */
+    /* prune expired connections */
+    connection_prune();
   } // while
 
   close(epoll_fd);
