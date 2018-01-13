@@ -1,0 +1,3 @@
+[submodule "src/test/minctest"]
+	path = src/test/minctest
+	url = https://github.com/codeplea/minctest.git
