@@ -1,6 +1,6 @@
 #include "../connection.h"
 #include "../misc.h"
-#include <assert.h>
+#include "minctest/minctest.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -14,7 +14,7 @@ static int heap_size = 0;
 #define INHEAP(n, x) (((-1) < (x)) && ((x) < (n)))
 
 inline static void c_swap(int x, int y) {
-  assert(x >= 0 && x < heap_size && y >= 0 && y < heap_size);
+  lok(x >= 0 && x < heap_size && y >= 0 && y < heap_size);
   connection_t *tmp = lotos_connections[x];
   lotos_connections[x] = lotos_connections[y];
   lotos_connections[y] = tmp;
@@ -58,7 +58,7 @@ static void heap_bubble_down(int idx) {
     if (lotos_connections[idx]->active_time <=
         lotos_connections[proper_child]->active_time)
       break;
-    assert(INHEAP(heap_size, proper_child));
+    lok(INHEAP(heap_size, proper_child));
     c_swap(idx, proper_child);
     idx = proper_child;
   }
@@ -92,12 +92,12 @@ void TEST_BUBBLE_UP(int input[], int ans[], size_t n) {
 
   // TEST
   printf("%s %d:\n", "TEST_BUBBLE_UP CASE", test_bubble_up++);
-  assert(heap_size == n);
+  lok(heap_size == n);
   for (int i = 0; i < n; i++) {
     printf("{%d %lu} ", i, lotos_connections[i]->active_time);
-    assert(ans[i] == lotos_connections[i]->active_time);
+    lok(ans[i] == lotos_connections[i]->active_time);
   }
-  printf("\n\n");
+  printf("\n");
   free(conn_arr);
 }
 
@@ -122,12 +122,12 @@ void TEST_BUBBLE_DOWN(int input[], int ans[], size_t n, int pos, int nval) {
 
   // TEST
   printf("%s %d:\n", "TEST_BUBBLE_DOWN CASE", test_bubble_down++);
-  assert(heap_size == n);
+  lok(heap_size == n);
   for (int i = 0; i < n; i++) {
     printf("{%d %lu} ", i, lotos_connections[i]->active_time);
-    assert(ans[i] == lotos_connections[i]->active_time);
+    lok(ans[i] == lotos_connections[i]->active_time);
   }
-  printf("\n\n");
+  printf("\n");
   free(conn_arr);
 }
 
@@ -149,6 +149,8 @@ int main(int argc, char const *argv[]) {
     int ans[] = {4, 9, 17, 12, 19, 20, 60, 65, 30, 50};
     TEST_BUBBLE_UP(arr, ans, sizeof(arr) / sizeof(int));
   }
+
+  printf("\n\n");
 
   {
     int arr[] = {4, 1, 5, 9, 6, 0};
@@ -203,5 +205,8 @@ int main(int argc, char const *argv[]) {
     int ans[] = {10};
     TEST_BUBBLE_DOWN(arr, ans, sizeof(arr) / sizeof(int), 0, 10);
   }
-  return 0;
+  printf("\n\n");
+
+  lresults();
+  return lfails != 0;
 }
