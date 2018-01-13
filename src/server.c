@@ -107,11 +107,11 @@ static int make_server_socket(uint16_t port, int backlog) {
   if (listen_fd == ERROR)
     return ERROR;
 
-  int on = 1;
-  setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+  int enable = 1;
+  setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
   if (server_config.worker > 1) {
     // since linux 3.9
-    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
+    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
   }
 
   memset((void *)&saddr, 0, sizeof(saddr));

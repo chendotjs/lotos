@@ -4,6 +4,9 @@
 #include "server.h"
 #include <assert.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -93,8 +96,14 @@ static void heap_print() {
 
 /**************************  heap operation end  ******************************/
 
+/* ref `man 7 tcp`. disable Nagle Algorithm, make send(2) flush */
+static inline void connection_set_nodelay(connection_t *c) {
+  static int enable = 1;
+  setsockopt(c->fd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
+}
+
 connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
-  // Too many malloc would be slow
+  // Too many malloc would be slow, but mem pool seems not popular right now.
   connection_t *c = malloc(sizeof(connection_t));
   assert(c != NULL);
   if (c == NULL) { // malloc fail
@@ -102,6 +111,7 @@ connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
     return NULL;
   }
 
+  connection_set_nodelay(c);
   /* fill in connection_t */
   c->fd = fd;
   if (paddr)
