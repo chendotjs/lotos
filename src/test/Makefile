@@ -1,7 +1,7 @@
 CFLAGS=-g -std=c99 -Wall
 OPTFLAGS=
 
-all : slow_client heap_test
+all : slow_client heap_test buffer_test
 
 slow_client : slow_client.c ../misc.c
 	$(CC) $(CFLAGS) $^ -o $@
@@ -9,8 +9,12 @@ slow_client : slow_client.c ../misc.c
 heap_test : heap_test.c
 	$(CC) $(CFLAGS) $^ -o $@
 
+buffer_test : buffer_test.c ../buffer.c
+	$(CC) $(CFLAGS) $^ -o $@
+
 test :
 	./heap_test
+	./buffer_test
 
 clean :
-	rm -f slow_client heap_test
+	rm -f slow_client heap_test buffer_test
