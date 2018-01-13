@@ -72,11 +72,30 @@ work:;
         connection_t *c = lotos_events[i].data.ptr;
         int status;
         assert(c != NULL);
+        /**TODO:
+         * if use slow_client, every time will recv only 1 byte.When to decide
+         * the connection has recv enough data?
+         */
         if (!connecion_is_expired(c) && CONN_IS_IN(c)) {
           // recv
+          char buf[BUFSIZ];
+          int len = recv(c->fd, buf, sizeof(buf), 0);
+          buf[len] = '\0';
+          printf("recv len: %d\n%s\n", len, buf);
+          connection_disable_in(epoll_fd, c);
+          connection_enable_out(epoll_fd, c);
         }
         if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
           // send
+          char response[] = "HTTP/1.0 200 OK"CRLF\
+          "Connection:close"CRLF CRLF\
+          "<p>hello, this is lotos web server<p>"
+          "<p>far from complete, wish I can manage it carefully</p>"CRLF;
+
+          int len = send(c->fd, response, sizeof(response) - 1, 0);
+          printf("send %d bytes\n", len);
+          connection_disable_out(epoll_fd, c);
+          connecion_set_expired(c);
         }
       } // else
     }   // for loop
