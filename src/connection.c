@@ -102,9 +102,19 @@ static inline void connection_set_nodelay(connection_t *c) {
   setsockopt(c->fd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 }
 
-connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
+connection_t *connection_init() {
   // Too many malloc would be slow, but mem pool seems not popular right now.
   connection_t *c = malloc(sizeof(connection_t));
+  // init request
+  if(c)
+    request_init(&c->req, c);
+  return c;
+}
+
+
+connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
+  // Too many malloc would be slow, but mem pool seems not popular right now.
+  connection_t *c = connection_init();
   assert(c != NULL);
   if (c == NULL) { // malloc fail
     connection_close(c);
@@ -156,6 +166,12 @@ void connection_unregister(connection_t *c) {
   heap_bubble_down(c->heap_idx);
 }
 
+static inline void connection_free(connection_t *c) {
+  if (c)
+    free(c);
+  buffer_free(c->req.b);
+}
+
 /* close connection, free memory */
 int connection_close(connection_t *c) {
   if (c == NULL)
@@ -168,7 +184,7 @@ int connection_close(connection_t *c) {
   lotos_epoll_del(epoll_fd, c, 0, NULL);
   close(c->fd);
   connection_unregister(c);
-  free(c);
+  connection_free(c);
   return OK;
 }
 

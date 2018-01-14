@@ -4,6 +4,7 @@
 #include "buffer.h"
 #include "connection.h"
 #include "misc.h"
+#include <assert.h>
 
 #define MAX_HEADERS (20)
 #define MAX_ELEMENT_SIZE (2048)
@@ -33,11 +34,12 @@ typedef struct {
   char request_url[MAX_ELEMENT_SIZE];
   char headers[MAX_HEADERS][2][MAX_ELEMENT_SIZE];
 
-  connection_t *c; /* parent connection */
-  buffer_t *b;     /* requset buffer */
+  struct connection *c; /* belonged connection */
+  buffer_t *b;          /* requset buffer */
 } request_t;
 
-#endif
+extern void request_init(request_t *r, struct connection *c);
+
 
 /* status code */
 #define HTTP_STATUS_MAP(GEN)                                                   \
@@ -106,3 +108,5 @@ typedef enum {
   HTTP_STATUS_MAP(GEN)
 #undef GEN
 } http_status;
+
+#endif

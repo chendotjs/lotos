@@ -87,10 +87,10 @@ work:;
         }
         if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
           // send
-          char response[] = "HTTP/1.0 200 OK"CRLF\
-          "Connection:close"CRLF CRLF\
-          "<p>hello, this is lotos web server<p>"
-          "<p>far from complete, wish I can manage it carefully</p>"CRLF;
+          char response[] =
+              "HTTP/1.0 200 OK" CRLF "Connection:close" CRLF CRLF
+              "<p>hello, this is lotos web server<p>"
+              "<p>far from complete, wish I can manage it carefully</p>" CRLF;
 
           int len = send(c->fd, response, sizeof(response) - 1, 0);
           printf("send %d bytes\n", len);
