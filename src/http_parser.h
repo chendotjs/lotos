@@ -3,6 +3,7 @@
 
 #include "buffer.h"
 #include "misc.h"
+#include <string.h>
 
 /* RFC2616 */
 /* https://www.w3.org/Protocols/rfc2616/rfc2616.html */
@@ -45,6 +46,11 @@
  */
 
 #define INVALID_REQUEST (-1)
+#define MAX_HEADERS (20)
+#define MAX_ELEMENT_SIZE (2048)
+
+typedef int (*method_cb_t)(int method);
+typedef int (*data_cb_t)(const char *begin, const char *end);
 
 /* basic http method */
 typedef enum {
@@ -53,6 +59,7 @@ typedef enum {
   HTTP_HEAD,
   HTTP_POST,
   HTTP_PUT,
+  HTTP_INVALID,
 } http_method;
 
 /* HTTP protocol version */
@@ -61,15 +68,43 @@ typedef struct {
   unsigned short http_minor;
 } http_version;
 
-/* parser state */
+/* parser state used in fsm */
 typedef enum {
   RL_BEGIN = 0,
   RL_METHOD,
+  RL_BEFORE_URI,
 } parser_state;
 
 typedef struct {
-  
+  /* preserve buffer_t state, so when recv new data, we can keep parsing */
+  char *next_parse_pos; /* parser position in buffer_t */
+  int state;            /* parser state */
+
+  /* callback functions */
+  method_cb_t on_method;
+  data_cb_t on_header_field;
+  data_cb_t on_header_value;
+
+  /* parsed result */
+  http_method method;
+  http_version version;
+  bool keep_alive;
+  int num_headers;
+
+  char query_string[MAX_ELEMENT_SIZE];
+  char request_path[MAX_ELEMENT_SIZE];
+  char request_url[MAX_ELEMENT_SIZE];
+  char headers[MAX_HEADERS][2][MAX_ELEMENT_SIZE];
+
+  /* private members, do not modify !!! */
+  char *method_begin;
+
 } parse_settings;
+
+static inline void parse_settings_init(parse_settings *st, buffer_t *b) {
+  memset(st, 0, sizeof(parse_settings));
+  st->next_parse_pos = b->buf;
+}
 
 /* status code */
 #define HTTP_STATUS_MAP(GEN)                                                   \
@@ -138,5 +173,7 @@ typedef enum {
   HTTP_STATUS_MAP(GEN)
 #undef GEN
 } http_status;
+
+extern int parse_line(buffer_t *b, parse_settings *st);
 
 #endif
