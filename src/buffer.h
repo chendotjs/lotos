@@ -28,4 +28,9 @@ static inline size_t buffer_avail(const buffer_t *pb) { return pb->free; }
 static inline buffer_t *buffer_buffer(const BUFFER buf) {
   return (buffer_t *)(buf - (sizeof(buffer_t)));
 }
+
+static inline BUFFER buffer_end(const buffer_t *pb) {
+  return ((BUFFER)(pb->buf) + pb->len);
+}
+
 #endif

@@ -80,6 +80,21 @@ void test6() {
   free(buffer);
 }
 
+void test7() {
+  buffer_t *buffer = buffer_new(10);
+  lok(buffer->len == 0 && buffer->free == 10);
+  lok(buffer->buf == buffer_end(buffer));
+
+  buffer = buffer_cat(buffer, "abc", 3);
+  lok(buffer->len == 3 && buffer->free == 7);
+
+  lsequal(buffer->buf, "abc");
+  lequal('c', *(buffer_end(buffer) - 1));
+  lequal('b', *(buffer_end(buffer) - 2));
+  free(buffer);
+}
+
+
 int main(int argc, char const *argv[]) {
   lrun("test1", test1);
   lrun("test2", test2);
@@ -87,6 +102,7 @@ int main(int argc, char const *argv[]) {
   lrun("test4", test4);
   lrun("test5", test5);
   lrun("test6", test6);
+  lrun("test7", test7);
   lresults();
   return lfails != 0;
 }
