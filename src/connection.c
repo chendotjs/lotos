@@ -106,11 +106,14 @@ connection_t *connection_init() {
   // Too many malloc would be slow, but mem pool seems not popular right now.
   connection_t *c = malloc(sizeof(connection_t));
   // init request
-  if(c)
-    request_init(&c->req, c);
+  if (c) {
+    if (request_init(&c->req, c) == ERROR) {
+      free(c);
+      c = NULL;
+    }
+  }
   return c;
 }
-
 
 connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
   // Too many malloc would be slow, but mem pool seems not popular right now.

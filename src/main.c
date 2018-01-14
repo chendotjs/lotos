@@ -78,12 +78,11 @@ work:;
          */
         if (!connecion_is_expired(c) && CONN_IS_IN(c)) {
           // recv
-          char buf[BUFSIZ];
-          int len = recv(c->fd, buf, sizeof(buf), 0);
-          buf[len] = '\0';
-          printf("recv len: %d\n%s\n", len, buf);
-          connection_disable_in(epoll_fd, c);
-          connection_enable_out(epoll_fd, c);
+          status = request_handle(c);
+          if (status == ERROR)
+            connecion_set_expired(c);
+          else
+            connecion_set_reactivated(c);
         }
         if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
           // send

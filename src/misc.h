@@ -7,6 +7,7 @@ typedef enum { TRUE = 1, FALSE = 0 } bool;
 
 #define ERROR (-1)
 #define OK (0)
+#define AGAIN (1)
 
 #define CRLF "\r\n"
 

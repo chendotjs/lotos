@@ -23,7 +23,7 @@ typedef struct {
   unsigned short http_minor;
 } http_version;
 
-typedef struct {
+struct request {
   http_method method;
   http_version version;
   bool keep_alive;
@@ -36,10 +36,12 @@ typedef struct {
 
   struct connection *c; /* belonged connection */
   buffer_t *b;          /* requset buffer */
-} request_t;
+  int parse_pos;        /* parser position in buffer_t */
+};
+typedef struct request request_t;
 
-extern void request_init(request_t *r, struct connection *c);
-
+extern int request_init(request_t *r, struct connection *c);
+extern int request_handle(struct connection *c);
 
 /* status code */
 #define HTTP_STATUS_MAP(GEN)                                                   \
