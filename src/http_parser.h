@@ -70,6 +70,7 @@ typedef struct {
 
 /* parser state used in fsm */
 typedef enum {
+  /* request line states */
   RL_BEGIN = 0,
   RL_METHOD,
   RL_BEFORE_URI,
@@ -174,6 +175,6 @@ typedef enum {
 #undef GEN
 } http_status;
 
-extern int parse_line(buffer_t *b, parse_settings *st);
+extern int parse_request_line(buffer_t *b, parse_settings *st);
 
 #endif

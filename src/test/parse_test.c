@@ -11,13 +11,13 @@ void test_method1() {
   parse_settings_init(&st, buffer);
 
   buffer_cat(buffer, "POST / HTTP/1.0", 10);
-  parse_line(buffer, &st);
+  parse_request_line(buffer, &st);
   lok(st.method_begin == buffer->buf);
   lok(st.next_parse_pos == buffer_end(buffer));
   lequal(HTTP_POST, st.method);
 }
 
-/* so parse_line can be called many times when recv new data */
+/* so parse_request_line can be called many times when recv new data */
 void test_method2() {
   buffer_t *buffer = buffer_init();
   parse_settings st;
@@ -25,13 +25,13 @@ void test_method2() {
 
   int status = -1;
   buffer_cat(buffer, "GE", 2);
-  status = parse_line(buffer, &st);
+  status = parse_request_line(buffer, &st);
   lequal(AGAIN, status);
   lok(st.method_begin == buffer->buf);
   lok(st.next_parse_pos == buffer_end(buffer));
 
   buffer_cat(buffer, "T ", 2);
-  parse_line(buffer, &st);
+  parse_request_line(buffer, &st);
   lequal(HTTP_GET, st.method);
 }
 

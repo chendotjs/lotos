@@ -12,8 +12,8 @@
 
 static int parse_method(char *begin, char *end);
 
-/* use a fsm to parse */
-int parse_line(buffer_t *b, parse_settings *st) {
+/* parse request line */
+int parse_request_line(buffer_t *b, parse_settings *st) {
   char ch;
   char *p;
   for (p = st->next_parse_pos; p < buffer_end(b); p++) {
