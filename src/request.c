@@ -22,7 +22,8 @@ static int request_recv(request_t *r) {
   int len;
   while (TRUE) {
     len = recv(r->c->fd, buf, sizeof(buf), 0);
-    if (len == 0) {
+    // https://stackoverflow.com/questions/2416944/can-read-function-on-a-connected-socket-return-zero-bytes
+    if (len == 0) { // if client close, will read EOF
       return OK;
     }
     if (len == ERROR) {
@@ -44,7 +45,7 @@ static int request_recv(request_t *r) {
 int request_handle(connection_t *c) {
   request_t *r = &c->req;
   int status = request_recv(r);
-  if (status == ERROR)
+  if (status == ERROR && status == OK) // error or client close
     return ERROR;
   /**
    * TODO: parse request

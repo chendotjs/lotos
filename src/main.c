@@ -50,7 +50,6 @@ work:;
 
   server_setup(server_config.port);
 
-  // TODO: add listen_fd to epoll and test slow_client whether will trigger
   while (TRUE) {
     /**
      * nfds is number of file descriptors ready for the requested I/O or zero
