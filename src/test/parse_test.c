@@ -35,9 +35,22 @@ void test_method2() {
   lequal(HTTP_GET, st.method);
 }
 
+//TODO: test
+void test_method3() {
+  buffer_t *buffer = buffer_init();
+  parse_settings st;
+  parse_settings_init(&st, buffer);
+
+  int status = -1;
+  char req_line[] = "GET /api/ HTTP/1.1\r\n";
+  buffer_cat(buffer, req_line, strlen(req_line));
+  status = parse_request_line(buffer, &st);
+}
+
 int main(int argc, char const *argv[]) {
   lrun("test_method1", test_method1);
   lrun("test_method2", test_method2);
+  lrun("test_method3", test_method3);
 
   lresults();
   return lfails != 0;

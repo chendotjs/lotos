@@ -71,9 +71,14 @@ typedef struct {
 /* parser state used in fsm */
 typedef enum {
   /* request line states */
-  RL_BEGIN = 0,
-  RL_METHOD,
-  RL_BEFORE_URI,
+  S_RL_BEGIN = 0,
+  S_RL_METHOD,
+  S_RL_SP_BEFORE_URL,
+  S_RL_URL,
+  S_RL_SP_BEFORE_VERSION,
+
+
+
 } parser_state;
 
 typedef struct {
@@ -99,6 +104,7 @@ typedef struct {
 
   /* private members, do not modify !!! */
   char *method_begin;
+  char *url_begin;
 
 } parse_settings;
 

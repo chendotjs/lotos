@@ -11,6 +11,7 @@
 #define STR7_EQ(p, q) (STR3_EQ(p, q) && STR4_EQ(p + 3, q + 3))
 
 static int parse_method(char *begin, char *end);
+static int parse_url(char *begin, char *end);
 
 /* parse request line */
 int parse_request_line(buffer_t *b, parse_settings *st) {
@@ -19,19 +20,19 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
   for (p = st->next_parse_pos; p < buffer_end(b); p++) {
     ch = *p;
     switch (st->state) {
-    case RL_BEGIN:
+    case S_RL_BEGIN:
       switch (ch) {
       case 'a' ... 'z':
       case 'A' ... 'Z':
-        // TODO: save current pos, which is METHOD beginning
+        /* save current pos, which is METHOD beginning */
         st->method_begin = p;
-        st->state = RL_METHOD;
+        st->state = S_RL_METHOD;
         break;
       default:
         return INVALID_REQUEST;
-      } // end RL_BEGIN
+      } // end S_RL_BEGIN
 
-    case RL_METHOD:
+    case S_RL_METHOD:
       switch (ch) {
       case 'a' ... 'z':
       case 'A' ... 'Z':
@@ -44,19 +45,44 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
         }
         if (method == HTTP_INVALID)
           return INVALID_REQUEST;
-        st->state = RL_BEFORE_URI;
+        st->state = S_RL_SP_BEFORE_URL;
         break;
       default:
         return INVALID_REQUEST;
       }
-      } // end RL_METHOD
+      } // end S_RL_METHOD
       break;
-    // TODO: RL_BEFORE_URI
-    case RL_BEFORE_URI:
+    case S_RL_SP_BEFORE_URL:
       switch (ch) {
       case ' ':
+      case '\t': /* ease parser, '\t' is also considered valid */
         break;
+      case '\r':
+      case '\n':
+        return INVALID_REQUEST;
+      default:
+        st->state = S_RL_URL;
+        st->url_begin = p;
       }
+      break;
+
+    case S_RL_URL:
+      switch (ch) {
+      case ' ':
+      case '\t':
+        st->state = S_RL_SP_BEFORE_VERSION;
+        if (parse_url(st->url_begin, p))
+          return INVALID_REQUEST;
+        break;
+      case '\r':
+      case '\n':
+        return INVALID_REQUEST;
+      default:
+        break;
+      } // end S_RL_URL
+      break;
+    case S_RL_SP_BEFORE_VERSION:
+      // TODO:
       break;
     } // end switch(state)
   }   // end for
@@ -96,4 +122,10 @@ static int parse_method(char *begin, char *end) {
     return HTTP_INVALID;
   }
   return HTTP_INVALID;
+}
+
+// TODO: parse URL
+static int parse_url(char *begin, char *end) {
+  printf("%p %p\n", begin, end);
+  return OK;
 }
