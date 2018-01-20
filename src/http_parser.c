@@ -202,6 +202,11 @@ done:;
   return OK;
 }
 
+/* parse header line */
+int parse_header_line(buffer_t *b, parse_settings *st) {
+
+}
+
 static int parse_method(char *begin, char *end) {
   int len = end - begin;
   switch (len) {
