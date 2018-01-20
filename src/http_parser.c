@@ -1,6 +1,7 @@
-#include "http_parser.h"
 #include "buffer.h"
+#include "http_parser.h"
 #include "misc.h"
+#include <assert.h>
 #include <string.h>
 
 #define STR2_EQ(p, q) ((p)[0] == (q)[0] && (p)[1] == (q)[1])
@@ -10,10 +11,29 @@
 #define STR6_EQ(p, q) (STR3_EQ(p, q) && STR3_EQ(p + 3, q + 3))
 #define STR7_EQ(p, q) (STR3_EQ(p, q) && STR4_EQ(p + 3, q + 3))
 
+#define HEADER_CPY(dst, src_beg, src_end, dst_size)                            \
+  do {                                                                         \
+    assert(src_beg <= src_end);                                                \
+    size_t len = ((src_end) - (src_beg));                                      \
+    if (len < dst_size) {                                                      \
+      memcpy(dst, src_beg, len);                                               \
+      dst[len] = '\0';                                                         \
+    } else {                                                                   \
+      return INVALID_REQUEST;                                                  \
+    }                                                                          \
+  } while (0)
+
 static int parse_method(char *begin, char *end);
 static int parse_url(char *begin, char *end, parse_settings *st);
 
 /* parse request line */
+/**
+ * @return
+ * OK: request line OK
+ * AGAIN: parse to the end of buffer, but no complete request line
+ * INVALID_REQUEST request not valid
+ * URL_OUT_OF_RANGE url too long
+ */
 int parse_request_line(buffer_t *b, parse_settings *st) {
   char ch;
   char *p;
@@ -71,8 +91,9 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       case ' ':
       case '\t':
         st->state = S_RL_SP_BEFORE_VERSION;
-        if (parse_url(st->url_begin, p, st))
-          return INVALID_REQUEST;
+        int url_status = parse_url(st->url_begin, p, st);
+        if (url_status)
+          return url_status;
         break;
       case '\r':
       case '\n':
@@ -206,6 +227,7 @@ done:;
  * @return
  *  OK: one header line has been parsed
  *  AGAIN: parse to the end of buffer, but no complete header
+ *  INVALID_REQUEST request not valid
  *  CRLF_LINE: `\r\n`, which means all headers have been parsed
  *
  */
@@ -316,12 +338,10 @@ done:;
   st->num_headers++;
 
   /* put header name and val into header[2][MAX_ELEMENT_SIZE] */
-  memcpy(st->header[0], st->header_line_begin,
-         st->header_colon_pos - st->header_line_begin);
-  st->header[0][st->header_colon_pos - st->header_line_begin] = '\0';
-  memcpy(st->header[1], st->header_val_begin,
-         st->header_val_end - st->header_val_begin);
-  st->header[1][st->header_val_end - st->header_val_begin] = '\0';
+  HEADER_CPY(st->header[0], st->header_line_begin, st->header_colon_pos,
+             sizeof(st->header[0]));
+  HEADER_CPY(st->header[1], st->header_val_begin, st->header_val_end,
+             sizeof(st->header[1]));
   return isCRLF_LINE ? CRLF_LINE : OK;
 }
 
@@ -366,7 +386,7 @@ static int parse_url(char *begin, char *end, parse_settings *st) {
     memcpy(st->request_url, begin, len);
     st->request_url[len] = '\0';
   } else
-    return INVALID_REQUEST; /* url too long */
+    return URL_OUT_OF_RANGE; /* url too long */
 
   return OK;
 }

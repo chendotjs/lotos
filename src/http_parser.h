@@ -47,6 +47,8 @@
 
 #define INVALID_REQUEST (-1)
 #define CRLF_LINE (2)
+#define URL_OUT_OF_RANGE (3)
+
 #define MAX_ELEMENT_SIZE (2048)
 
 typedef int (*method_cb_t)(int method);
@@ -151,6 +153,7 @@ static inline void parse_settings_init(parse_settings *st, buffer_t *b) {
   GEN(404, NOT_FOUND, Not Found)                                               \
   GEN(405, METHOD_NOT_ALLOWED, Method Not Allowed)                             \
   GEN(406, NOT_ACCEPTABLE, Not Acceptable)                                     \
+  GEN(414, URI_TOO_LONG, URI Too Long)                                         \
   GEN(500, INTERNAL_SERVER_ERROR, Internal Server Error)                       \
   GEN(501, NOT_IMPLEMENTED, Not Implemented)                                   \
   GEN(502, BAD_GATEWAY, Bad Gateway)                                           \
