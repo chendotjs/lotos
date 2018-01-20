@@ -58,12 +58,11 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       case 'A' ... 'Z':
         break;
       case ' ': {
-        int method = parse_method(st->method_begin, p);
-        st->method = method;
+        st->method = parse_method(st->method_begin, p);
         if (st->on_method) {
-          st->on_method(method);
+          st->on_method(st->method);
         }
-        if (method == HTTP_INVALID)
+        if (st->method == HTTP_INVALID)
           return INVALID_REQUEST;
         st->state = S_RL_SP_BEFORE_URL;
         break;
@@ -379,7 +378,7 @@ static int parse_method(char *begin, char *end) {
   return HTTP_INVALID;
 }
 
-// TODO: parse URL
+/* simple parse url */
 static int parse_url(char *begin, char *end, parse_settings *st) {
   size_t len = end - begin;
   if (len < sizeof(st->request_url)) {
@@ -388,5 +387,21 @@ static int parse_url(char *begin, char *end, parse_settings *st) {
   } else
     return URL_OUT_OF_RANGE; /* url too long */
 
+  char *p = begin;
+  for (; p != end; p++) {
+    if (*p == '?') { //  find the first '?'
+      memcpy(st->request_path, begin, p - begin);
+      st->request_path[p - begin] = '\0';
+
+      p++;
+      memcpy(st->query_string, p, end - p);
+      st->query_string[end - p] = '\0';
+      break;
+    }
+  }
+  if (p == end) { // no query_string
+    memcpy(st->request_path, begin, p - begin);
+    st->request_path[p - begin] = '\0';
+  }
   return OK;
 }

@@ -15,6 +15,9 @@ void test_method1() {
   lok(st.method_begin == buffer->buf);
   lok(st.next_parse_pos == buffer_end(buffer));
   lequal(HTTP_POST, st.method);
+  lsequal(st.request_url, "/");
+  lsequal(st.request_path, "/");
+  lsequal(st.query_string, "");
 }
 
 /* so parse_request_line can be called many times when recv new data */
@@ -30,9 +33,17 @@ void test_method2() {
   lok(st.method_begin == buffer->buf);
   lok(st.next_parse_pos == buffer_end(buffer));
 
-  buffer_cat(buffer, "T ", 2);
-  parse_request_line(buffer, &st);
+  char next_buf[] = "T /s?wd=hello%20world";
+  buffer_cat(buffer, next_buf, strlen(next_buf));
+  status = parse_request_line(buffer, &st);
+  lequal(AGAIN, status);
+
+  buffer_cat(buffer, " ", 1);
+  status = parse_request_line(buffer, &st);
+
   lequal(HTTP_GET, st.method);
+  lsequal(st.request_path, "/s");
+  lsequal(st.query_string, "wd=hello%20world");
 }
 
 /* valid request line */
@@ -50,6 +61,8 @@ void test_method3() {
   lequal(st.version.http_major, 1);
   lequal(st.version.http_minor, 1);
   lsequal(st.request_url, "/api/set/?wd=123abc");
+  lsequal(st.request_path, "/api/set/");
+  lsequal(st.query_string, "wd=123abc");
   lequal(OK, status);
   lok(st.next_parse_pos[0] = 'H');
   lok(st.next_parse_pos[1] = 'o');
@@ -137,6 +150,8 @@ void test_method6() {
   lequal(st.version.http_major, 1);
   lequal(st.version.http_minor, 1);
   lsequal(st.request_url, "/favicon.ico");
+  lsequal(st.request_path, "/favicon.ico");
+  lsequal(st.query_string, "");
   lequal(OK, status);
 
   status = parse_header_line(buffer, &st);
