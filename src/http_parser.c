@@ -11,7 +11,7 @@
 #define STR7_EQ(p, q) (STR3_EQ(p, q) && STR4_EQ(p + 3, q + 3))
 
 static int parse_method(char *begin, char *end);
-static int parse_url(char *begin, char *end);
+static int parse_url(char *begin, char *end, parse_settings *st);
 
 /* parse request line */
 int parse_request_line(buffer_t *b, parse_settings *st) {
@@ -71,7 +71,7 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       case ' ':
       case '\t':
         st->state = S_RL_SP_BEFORE_VERSION;
-        if (parse_url(st->url_begin, p))
+        if (parse_url(st->url_begin, p, st))
           return INVALID_REQUEST;
         break;
       case '\r':
@@ -82,12 +82,124 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       } // end S_RL_URL
       break;
     case S_RL_SP_BEFORE_VERSION:
-      // TODO:
+      switch (ch) {
+      case ' ':
+      case '\t':
+        break;
+      case 'H':
+      case 'h':
+        st->state = S_RL_VERSION_H;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_SP_BEFORE_RL_VERSION
+      break;
+    case S_RL_VERSION_H:
+      switch (ch) {
+      case 'T':
+      case 't':
+        st->state = S_RL_VERSION_HT;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_H
+      break;
+    case S_RL_VERSION_HT:
+      switch (ch) {
+      case 'T':
+      case 't':
+        st->state = S_RL_VERSION_HTT;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_HT
+      break;
+    case S_RL_VERSION_HTT:
+      switch (ch) {
+      case 'P':
+      case 'p':
+        st->state = S_RL_VERSION_HTTP;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_HTT
+      break;
+    case S_RL_VERSION_HTTP:
+      switch (ch) {
+      case '/':
+        st->state = S_RL_VERSION_HTTP_SLASH;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_HTTP
+      break;
+    case S_RL_VERSION_HTTP_SLASH:
+      switch (ch) {
+      case '0' ... '9':
+        st->version.http_major = st->version.http_major * 10 + ch - '0';
+        st->state = S_RL_VERSION_MAJOR;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_HTTP_SLASH
+      break;
+    case S_RL_VERSION_MAJOR:
+      switch (ch) {
+      case '0' ... '9':
+        st->version.http_major = st->version.http_major * 10 + ch - '0';
+        if (st->version.http_major > 1)
+          return INVALID_REQUEST;
+        break;
+      case '.':
+        st->state = S_RL_VERSION_DOT;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_MAJOR
+      break;
+    case S_RL_VERSION_DOT:
+      switch (ch) {
+      case '0' ... '9':
+        st->version.http_minor = st->version.http_minor * 10 + ch - '0';
+        st->state = S_RL_VERSION_MINOR;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_DOT
+      break;
+    case S_RL_VERSION_MINOR:
+      switch (ch) {
+      case '0' ... '9':
+        st->version.http_minor = st->version.http_minor * 10 + ch - '0';
+        if (st->version.http_minor > 1)
+          return INVALID_REQUEST;
+        break;
+      case '\r':
+        st->state = S_RL_CR_AFTER_VERSION;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_VERSION_MINOR
+      break;
+    case S_RL_CR_AFTER_VERSION:
+      switch (ch) {
+      case '\n':
+        st->state = S_RL_LF_AFTER_VERSION;
+        /* parse request line done*/
+        goto done;
+        break;
+      default:
+        return INVALID_REQUEST;
+      } // end S_RL_CR_AFTER_VERSION
       break;
     } // end switch(state)
   }   // end for
   st->next_parse_pos = buffer_end(b);
   return AGAIN;
+done:;
+  st->next_parse_pos = p + 1;
+  st->state = S_HD_BEGIN;
+  return OK;
 }
 
 static int parse_method(char *begin, char *end) {
@@ -125,7 +237,13 @@ static int parse_method(char *begin, char *end) {
 }
 
 // TODO: parse URL
-static int parse_url(char *begin, char *end) {
-  printf("%p %p\n", begin, end);
+static int parse_url(char *begin, char *end, parse_settings *st) {
+  size_t len = end - begin;
+  if (len < sizeof(st->request_url)) {
+    memcpy(st->request_url, begin, len);
+    st->request_url[len] = '\0';
+  } else
+    return INVALID_REQUEST; /* url too long */
+
   return OK;
 }

@@ -11,7 +11,7 @@
 
 struct request {
   struct connection *c; /* belonged connection */
-  buffer_t *b;          /* requset buffer */
+  buffer_t *b;          /* request buffer */
 };
 typedef struct request request_t;
 

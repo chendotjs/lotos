@@ -35,22 +35,49 @@ void test_method2() {
   lequal(HTTP_GET, st.method);
 }
 
-//TODO: test
+/* valid request line */
 void test_method3() {
   buffer_t *buffer = buffer_init();
   parse_settings st;
   parse_settings_init(&st, buffer);
 
   int status = -1;
-  char req_line[] = "GET /api/ HTTP/1.1\r\n";
+  char req_line[] = "GET /api/set/?wd=123abc HTTP/1.1\r\nHost:localhost:8888";
   buffer_cat(buffer, req_line, strlen(req_line));
   status = parse_request_line(buffer, &st);
+
+  lequal(HTTP_GET, st.method);
+  lequal(st.version.http_major, 1);
+  lequal(st.version.http_minor, 1);
+  lsequal(st.request_url, "/api/set/?wd=123abc");
+  lequal(OK, status);
+  lok(st.next_parse_pos[0] = 'H');
+  lok(st.next_parse_pos[1] = 'o');
+}
+
+/* invalid request line */
+void test_method4() {
+  buffer_t *buffer = buffer_init();
+  parse_settings st;
+  parse_settings_init(&st, buffer);
+
+  int status = -1;
+  char req_line[] = "POST /api/set/?wd=123abc HTTP/01.10\r\nHost:localhost:8888";
+  buffer_cat(buffer, req_line, strlen(req_line));
+  status = parse_request_line(buffer, &st);
+
+  lequal(HTTP_POST, st.method);
+  lequal(st.version.http_major, 1);
+  lequal(st.version.http_minor, 10);
+  lsequal(st.request_url, "/api/set/?wd=123abc");
+  lequal(ERROR, status);
 }
 
 int main(int argc, char const *argv[]) {
   lrun("test_method1", test_method1);
   lrun("test_method2", test_method2);
   lrun("test_method3", test_method3);
+  lrun("test_method4", test_method4);
 
   lresults();
   return lfails != 0;

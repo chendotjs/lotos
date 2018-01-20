@@ -76,8 +76,19 @@ typedef enum {
   S_RL_SP_BEFORE_URL,
   S_RL_URL,
   S_RL_SP_BEFORE_VERSION,
+  S_RL_VERSION_H,
+  S_RL_VERSION_HT,
+  S_RL_VERSION_HTT,
+  S_RL_VERSION_HTTP,
+  S_RL_VERSION_HTTP_SLASH,
+  S_RL_VERSION_MAJOR,
+  S_RL_VERSION_DOT,
+  S_RL_VERSION_MINOR,
+  S_RL_CR_AFTER_VERSION,
+  S_RL_LF_AFTER_VERSION,
 
-
+  /* header states */
+  S_HD_BEGIN,
 
 } parser_state;
 
@@ -91,15 +102,17 @@ typedef struct {
   data_cb_t on_header_field;
   data_cb_t on_header_value;
 
-  /* parsed result */
+  /* parsed request line result */
   http_method method;
   http_version version;
-  bool keep_alive;
-  int num_headers;
-
-  char query_string[MAX_ELEMENT_SIZE];
-  char request_path[MAX_ELEMENT_SIZE];
   char request_url[MAX_ELEMENT_SIZE];
+  char request_path[MAX_ELEMENT_SIZE];
+  char query_string[MAX_ELEMENT_SIZE];
+
+  /* parsed header lines result */
+  bool keep_alive;
+  int content_length;
+  int num_headers;
   char headers[MAX_HEADERS][2][MAX_ELEMENT_SIZE];
 
   /* private members, do not modify !!! */
