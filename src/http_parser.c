@@ -24,7 +24,7 @@
   } while (0)
 
 static int parse_method(char *begin, char *end);
-static int parse_url(char *begin, char *end, parse_settings *st);
+static int parse_url(char *begin, char *end, parse_archive *ar);
 
 /* parse request line */
 /**
@@ -34,19 +34,19 @@ static int parse_url(char *begin, char *end, parse_settings *st);
  * INVALID_REQUEST request not valid
  * URL_OUT_OF_RANGE url too long
  */
-int parse_request_line(buffer_t *b, parse_settings *st) {
+int parse_request_line(buffer_t *b, parse_archive *ar) {
   char ch;
   char *p;
-  for (p = st->next_parse_pos; p < buffer_end(b); p++) {
+  for (p = ar->next_parse_pos; p < buffer_end(b); p++) {
     ch = *p;
-    switch (st->state) {
+    switch (ar->state) {
     case S_RL_BEGIN:
       switch (ch) {
       case 'a' ... 'z':
       case 'A' ... 'Z':
         /* save current pos, which is METHOD beginning */
-        st->method_begin = p;
-        st->state = S_RL_METHOD;
+        ar->method_begin = p;
+        ar->state = S_RL_METHOD;
         break;
       default:
         return INVALID_REQUEST;
@@ -58,10 +58,10 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       case 'A' ... 'Z':
         break;
       case ' ': {
-        st->method = parse_method(st->method_begin, p);
-        if (st->method == HTTP_INVALID)
+        ar->method = parse_method(ar->method_begin, p);
+        if (ar->method == HTTP_INVALID)
           return INVALID_REQUEST;
-        st->state = S_RL_SP_BEFORE_URL;
+        ar->state = S_RL_SP_BEFORE_URL;
         break;
       default:
         return INVALID_REQUEST;
@@ -77,8 +77,8 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       case '\n':
         return INVALID_REQUEST;
       default:
-        st->state = S_RL_URL;
-        st->url_begin = p;
+        ar->state = S_RL_URL;
+        ar->url_begin = p;
       }
       break;
 
@@ -86,8 +86,8 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       switch (ch) {
       case ' ':
       case '\t':
-        st->state = S_RL_SP_BEFORE_VERSION;
-        int url_status = parse_url(st->url_begin, p, st);
+        ar->state = S_RL_SP_BEFORE_VERSION;
+        int url_status = parse_url(ar->url_begin, p, ar);
         if (url_status)
           return url_status;
         break;
@@ -105,7 +105,7 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
         break;
       case 'H':
       case 'h':
-        st->state = S_RL_VERSION_H;
+        ar->state = S_RL_VERSION_H;
         break;
       default:
         return INVALID_REQUEST;
@@ -115,7 +115,7 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       switch (ch) {
       case 'T':
       case 't':
-        st->state = S_RL_VERSION_HT;
+        ar->state = S_RL_VERSION_HT;
         break;
       default:
         return INVALID_REQUEST;
@@ -125,7 +125,7 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       switch (ch) {
       case 'T':
       case 't':
-        st->state = S_RL_VERSION_HTT;
+        ar->state = S_RL_VERSION_HTT;
         break;
       default:
         return INVALID_REQUEST;
@@ -135,7 +135,7 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       switch (ch) {
       case 'P':
       case 'p':
-        st->state = S_RL_VERSION_HTTP;
+        ar->state = S_RL_VERSION_HTTP;
         break;
       default:
         return INVALID_REQUEST;
@@ -144,7 +144,7 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
     case S_RL_VERSION_HTTP:
       switch (ch) {
       case '/':
-        st->state = S_RL_VERSION_HTTP_SLASH;
+        ar->state = S_RL_VERSION_HTTP_SLASH;
         break;
       default:
         return INVALID_REQUEST;
@@ -153,8 +153,8 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
     case S_RL_VERSION_HTTP_SLASH:
       switch (ch) {
       case '0' ... '9':
-        st->version.http_major = st->version.http_major * 10 + ch - '0';
-        st->state = S_RL_VERSION_MAJOR;
+        ar->version.http_major = ar->version.http_major * 10 + ch - '0';
+        ar->state = S_RL_VERSION_MAJOR;
         break;
       default:
         return INVALID_REQUEST;
@@ -163,12 +163,12 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
     case S_RL_VERSION_MAJOR:
       switch (ch) {
       case '0' ... '9':
-        st->version.http_major = st->version.http_major * 10 + ch - '0';
-        if (st->version.http_major > 1)
+        ar->version.http_major = ar->version.http_major * 10 + ch - '0';
+        if (ar->version.http_major > 1)
           return INVALID_REQUEST;
         break;
       case '.':
-        st->state = S_RL_VERSION_DOT;
+        ar->state = S_RL_VERSION_DOT;
         break;
       default:
         return INVALID_REQUEST;
@@ -177,8 +177,8 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
     case S_RL_VERSION_DOT:
       switch (ch) {
       case '0' ... '9':
-        st->version.http_minor = st->version.http_minor * 10 + ch - '0';
-        st->state = S_RL_VERSION_MINOR;
+        ar->version.http_minor = ar->version.http_minor * 10 + ch - '0';
+        ar->state = S_RL_VERSION_MINOR;
         break;
       default:
         return INVALID_REQUEST;
@@ -187,12 +187,12 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
     case S_RL_VERSION_MINOR:
       switch (ch) {
       case '0' ... '9':
-        st->version.http_minor = st->version.http_minor * 10 + ch - '0';
-        if (st->version.http_minor > 1)
+        ar->version.http_minor = ar->version.http_minor * 10 + ch - '0';
+        if (ar->version.http_minor > 1)
           return INVALID_REQUEST;
         break;
       case '\r':
-        st->state = S_RL_CR_AFTER_VERSION;
+        ar->state = S_RL_CR_AFTER_VERSION;
         break;
       default:
         return INVALID_REQUEST;
@@ -201,7 +201,7 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
     case S_RL_CR_AFTER_VERSION:
       switch (ch) {
       case '\n':
-        st->state = S_RL_LF_AFTER_VERSION;
+        ar->state = S_RL_LF_AFTER_VERSION;
         /* parse request line done*/
         goto done;
       default:
@@ -210,11 +210,11 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
       break;
     } // end switch(state)
   }   // end for
-  st->next_parse_pos = buffer_end(b);
+  ar->next_parse_pos = buffer_end(b);
   return AGAIN;
 done:;
-  st->next_parse_pos = p + 1;
-  st->state = S_HD_BEGIN;
+  ar->next_parse_pos = p + 1;
+  ar->state = S_HD_BEGIN;
   return OK;
 }
 
@@ -227,24 +227,24 @@ done:;
  *  CRLF_LINE: `\r\n`, which means all headers have been parsed
  *
  */
-int parse_header_line(buffer_t *b, parse_settings *st) {
+int parse_header_line(buffer_t *b, parse_archive *ar) {
   char ch, *p;
   bool isCRLF_LINE = TRUE;
-  for (p = st->next_parse_pos; p < buffer_end(b); p++) {
+  for (p = ar->next_parse_pos; p < buffer_end(b); p++) {
     ch = *p;
-    switch (st->state) {
+    switch (ar->state) {
     case S_HD_BEGIN:
       switch (ch) {
       case 'A' ... 'Z':
       case 'a' ... 'z':
       case '0' ... '9':
       case '-':
-        st->state = S_HD_NAME;
-        st->header_line_begin = p;
+        ar->state = S_HD_NAME;
+        ar->header_line_begin = p;
         isCRLF_LINE = FALSE;
         break;
       case '\r':
-        st->state = S_HD_CR_AFTER_VAL;
+        ar->state = S_HD_CR_AFTER_VAL;
         break;
       case ' ':
       case '\t':
@@ -262,8 +262,8 @@ int parse_header_line(buffer_t *b, parse_settings *st) {
       case '-':
         break;
       case ':':
-        st->state = S_HD_COLON;
-        st->header_colon_pos = p;
+        ar->state = S_HD_COLON;
+        ar->header_colon_pos = p;
         break;
       default:
         return INVALID_REQUEST;
@@ -274,14 +274,14 @@ int parse_header_line(buffer_t *b, parse_settings *st) {
       switch (ch) {
       case ' ':
       case '\t':
-        st->state = S_HD_SP_BEFORE_VAL;
+        ar->state = S_HD_SP_BEFORE_VAL;
         break;
       case '\r':
       case '\n':
         return INVALID_REQUEST;
       default:
-        st->state = S_HD_VAL;
-        st->header_val_begin = p;
+        ar->state = S_HD_VAL;
+        ar->header_val_begin = p;
         break;
       }
       break;
@@ -295,8 +295,8 @@ int parse_header_line(buffer_t *b, parse_settings *st) {
       case '\n':
         return INVALID_REQUEST;
       default:
-        st->state = S_HD_VAL;
-        st->header_val_begin = p;
+        ar->state = S_HD_VAL;
+        ar->header_val_begin = p;
         break;
       }
       break;
@@ -304,11 +304,11 @@ int parse_header_line(buffer_t *b, parse_settings *st) {
     case S_HD_VAL:
       switch (ch) {
       case '\r':
-        st->header_val_end = p;
-        st->state = S_HD_CR_AFTER_VAL;
+        ar->header_val_end = p;
+        ar->state = S_HD_CR_AFTER_VAL;
         break;
       case '\n':
-        st->state = S_HD_LF_AFTER_VAL;
+        ar->state = S_HD_LF_AFTER_VAL;
         break;
       default:
         break;
@@ -318,7 +318,7 @@ int parse_header_line(buffer_t *b, parse_settings *st) {
     case S_HD_CR_AFTER_VAL:
       switch (ch) {
       case '\n':
-        st->state = S_HD_LF_AFTER_VAL;
+        ar->state = S_HD_LF_AFTER_VAL;
         goto done;
       default:
         return INVALID_REQUEST;
@@ -326,18 +326,18 @@ int parse_header_line(buffer_t *b, parse_settings *st) {
       break;
     } // end switch state
   }   // end for
-  st->next_parse_pos = buffer_end(b);
+  ar->next_parse_pos = buffer_end(b);
   return AGAIN;
 done:;
-  st->next_parse_pos = p + 1;
-  st->state = S_HD_BEGIN;
-  st->num_headers++;
+  ar->next_parse_pos = p + 1;
+  ar->state = S_HD_BEGIN;
+  ar->num_headers++;
 
   /* put header name and val into header[2][MAX_ELEMENT_SIZE] */
-  HEADER_CPY(st->header[0], st->header_line_begin, st->header_colon_pos,
-             sizeof(st->header[0]));
-  HEADER_CPY(st->header[1], st->header_val_begin, st->header_val_end,
-             sizeof(st->header[1]));
+  HEADER_CPY(ar->header[0], ar->header_line_begin, ar->header_colon_pos,
+             sizeof(ar->header[0]));
+  HEADER_CPY(ar->header[1], ar->header_val_begin, ar->header_val_end,
+             sizeof(ar->header[1]));
   return isCRLF_LINE ? CRLF_LINE : OK;
 }
 
@@ -376,29 +376,29 @@ static int parse_method(char *begin, char *end) {
 }
 
 /* simple parse url */
-static int parse_url(char *begin, char *end, parse_settings *st) {
+static int parse_url(char *begin, char *end, parse_archive *ar) {
   size_t len = end - begin;
-  if (len < sizeof(st->request_url)) {
-    memcpy(st->request_url, begin, len);
-    st->request_url[len] = '\0';
+  if (len < sizeof(ar->request_url)) {
+    memcpy(ar->request_url, begin, len);
+    ar->request_url[len] = '\0';
   } else
     return URL_OUT_OF_RANGE; /* url too long */
 
   char *p = begin;
   for (; p != end; p++) {
-    if (*p == '?') { //  find the first '?'
-      memcpy(st->request_path, begin, p - begin);
-      st->request_path[p - begin] = '\0';
+    if (*p == '?') { //  find the firar '?'
+      memcpy(ar->request_path, begin, p - begin);
+      ar->request_path[p - begin] = '\0';
 
       p++;
-      memcpy(st->query_string, p, end - p);
-      st->query_string[end - p] = '\0';
+      memcpy(ar->query_string, p, end - p);
+      ar->query_string[end - p] = '\0';
       break;
     }
   }
   if (p == end) { // no query_string
-    memcpy(st->request_path, begin, p - begin);
-    st->request_path[p - begin] = '\0';
+    memcpy(ar->request_path, begin, p - begin);
+    ar->request_path[p - begin] = '\0';
   }
   return OK;
 }

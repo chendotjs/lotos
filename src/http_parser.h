@@ -122,11 +122,11 @@ typedef struct {
   char *header_colon_pos;
   char *header_val_begin;
   char *header_val_end;
-} parse_settings;
+} parse_archive;
 
-static inline void parse_settings_init(parse_settings *st, buffer_t *b) {
-  memset(st, 0, sizeof(parse_settings));
-  st->next_parse_pos = b->buf;
+static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {
+  memset(ar, 0, sizeof(parse_archive));
+  ar->next_parse_pos = b->buf;
 }
 
 /* status code */
@@ -158,7 +158,7 @@ typedef enum {
 #undef GEN
 } http_status;
 
-extern int parse_request_line(buffer_t *b, parse_settings *st);
-extern int parse_header_line(buffer_t *b, parse_settings *st);
+extern int parse_request_line(buffer_t *b, parse_archive *ar);
+extern int parse_header_line(buffer_t *b, parse_archive *ar);
 
 #endif

@@ -10,6 +10,7 @@
 struct request {
   struct connection *c; /* belonged connection */
   buffer_t *b;          /* request buffer */
+  parse_archive par;   /* parse_archive */
 };
 typedef struct request request_t;
 
