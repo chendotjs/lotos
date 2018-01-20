@@ -1,5 +1,5 @@
-#include "buffer.h"
 #include "http_parser.h"
+#include "buffer.h"
 #include "misc.h"
 #include <string.h>
 
@@ -187,7 +187,6 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
         st->state = S_RL_LF_AFTER_VERSION;
         /* parse request line done*/
         goto done;
-        break;
       default:
         return INVALID_REQUEST;
       } // end S_RL_CR_AFTER_VERSION
@@ -203,8 +202,127 @@ done:;
 }
 
 /* parse header line */
+/**
+ * @return
+ *  OK: one header line has been parsed
+ *  AGAIN: parse to the end of buffer, but no complete header
+ *  CRLF_LINE: `\r\n`, which means all headers have been parsed
+ *
+ */
 int parse_header_line(buffer_t *b, parse_settings *st) {
+  char ch, *p;
+  bool isCRLF_LINE = TRUE;
+  for (p = st->next_parse_pos; p < buffer_end(b); p++) {
+    ch = *p;
+    switch (st->state) {
+    case S_HD_BEGIN:
+      switch (ch) {
+      case 'A' ... 'Z':
+      case 'a' ... 'z':
+      case '0' ... '9':
+      case '-':
+        st->state = S_HD_NAME;
+        st->header_line_begin = p;
+        isCRLF_LINE = FALSE;
+        break;
+      case '\r':
+        st->state = S_HD_CR_AFTER_VAL;
+        break;
+      case ' ':
+      case '\t':
+        break;
+      default:
+        return INVALID_REQUEST;
+      }
+      break;
 
+    case S_HD_NAME:
+      switch (ch) {
+      case 'A' ... 'Z':
+      case 'a' ... 'z':
+      case '0' ... '9':
+      case '-':
+        break;
+      case ':':
+        st->state = S_HD_COLON;
+        st->header_colon_pos = p;
+        break;
+      default:
+        return INVALID_REQUEST;
+      }
+      break;
+
+    case S_HD_COLON:
+      switch (ch) {
+      case ' ':
+      case '\t':
+        st->state = S_HD_SP_BEFORE_VAL;
+        break;
+      case '\r':
+      case '\n':
+        return INVALID_REQUEST;
+      default:
+        st->state = S_HD_VAL;
+        st->header_val_begin = p;
+        break;
+      }
+      break;
+
+    case S_HD_SP_BEFORE_VAL:
+      switch (ch) {
+      case ' ':
+      case '\t':
+        break;
+      case '\r':
+      case '\n':
+        return INVALID_REQUEST;
+      default:
+        st->state = S_HD_VAL;
+        st->header_val_begin = p;
+        break;
+      }
+      break;
+
+    case S_HD_VAL:
+      switch (ch) {
+      case '\r':
+        st->header_val_end = p;
+        st->state = S_HD_CR_AFTER_VAL;
+        break;
+      case '\n':
+        st->state = S_HD_LF_AFTER_VAL;
+        break;
+      default:
+        break;
+      }
+      break;
+
+    case S_HD_CR_AFTER_VAL:
+      switch (ch) {
+      case '\n':
+        st->state = S_HD_LF_AFTER_VAL;
+        goto done;
+      default:
+        return INVALID_REQUEST;
+      }
+      break;
+    } // end switch state
+  }   // end for
+  st->next_parse_pos = buffer_end(b);
+  return AGAIN;
+done:;
+  st->next_parse_pos = p + 1;
+  st->state = S_HD_BEGIN;
+  st->num_headers++;
+
+  /* put header name and val into header[2][MAX_ELEMENT_SIZE] */
+  memcpy(st->header[0], st->header_line_begin,
+         st->header_colon_pos - st->header_line_begin);
+  st->header[0][st->header_colon_pos - st->header_line_begin] = '\0';
+  memcpy(st->header[1], st->header_val_begin,
+         st->header_val_end - st->header_val_begin);
+  st->header[1][st->header_val_end - st->header_val_begin] = '\0';
+  return isCRLF_LINE ? CRLF_LINE : OK;
 }
 
 static int parse_method(char *begin, char *end) {

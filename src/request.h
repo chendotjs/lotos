@@ -7,8 +7,6 @@
 #include "misc.h"
 #include <assert.h>
 
-
-
 struct request {
   struct connection *c; /* belonged connection */
   buffer_t *b;          /* request buffer */

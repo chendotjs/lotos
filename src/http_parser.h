@@ -46,7 +46,7 @@
  */
 
 #define INVALID_REQUEST (-1)
-#define MAX_HEADERS (20)
+#define CRLF_LINE (2)
 #define MAX_ELEMENT_SIZE (2048)
 
 typedef int (*method_cb_t)(int method);
@@ -89,6 +89,12 @@ typedef enum {
 
   /* header states */
   S_HD_BEGIN,
+  S_HD_NAME,
+  S_HD_COLON,
+  S_HD_SP_BEFORE_VAL,
+  S_HD_VAL,
+  S_HD_CR_AFTER_VAL,
+  S_HD_LF_AFTER_VAL,
 
 } parser_state;
 
@@ -113,11 +119,16 @@ typedef struct {
   bool keep_alive;
   int content_length;
   int num_headers;
-  char headers[MAX_HEADERS][2][MAX_ELEMENT_SIZE];
+  char header[2][MAX_ELEMENT_SIZE]; /* store header every time
+                                       `parse_header_line` */
 
   /* private members, do not modify !!! */
   char *method_begin;
   char *url_begin;
+  char *header_line_begin;
+  char *header_colon_pos;
+  char *header_val_begin;
+  char *header_val_end;
 
 } parse_settings;
 

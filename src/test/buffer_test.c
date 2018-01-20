@@ -94,7 +94,6 @@ void test7() {
   free(buffer);
 }
 
-
 int main(int argc, char const *argv[]) {
   lrun("test1", test1);
   lrun("test2", test2);
@@ -104,5 +103,6 @@ int main(int argc, char const *argv[]) {
   lrun("test6", test6);
   lrun("test7", test7);
   lresults();
+  printf("\n\n");
   return lfails != 0;
 }

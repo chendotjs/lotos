@@ -11,7 +11,7 @@
 #define MAX_CONNECTION (10240)
 
 // TODO: some other memebers, have not consider yet
- struct connection {
+struct connection {
   int fd;                   /* connection fildes */
   struct epoll_event event; /* epoll event */
   struct sockaddr_in saddr; /* IP socket address */

@@ -205,8 +205,7 @@ int main(int argc, char const *argv[]) {
     int ans[] = {10};
     TEST_BUBBLE_DOWN(arr, ans, sizeof(arr) / sizeof(int), 0, 10);
   }
-  printf("\n\n");
-
   lresults();
+  printf("\n\n");
   return lfails != 0;
 }
