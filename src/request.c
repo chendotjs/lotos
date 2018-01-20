@@ -14,7 +14,7 @@ int request_init(request_t *r, connection_t *c) {
   r->b = buffer_init();
   if (r->b == NULL)
     return ERROR;
-  // parse_settings_init(r->);
+  parse_archive_init(&r->par, r->b);
   return OK;
 }
 

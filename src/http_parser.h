@@ -97,10 +97,6 @@ typedef enum {
 } parser_state;
 
 typedef struct {
-  /* preserve buffer_t state, so when recv new data, we can keep parsing */
-  char *next_parse_pos; /* parser position in buffer_t */
-  int state;            /* parser state */
-
   /* parsed request line result */
   http_method method;
   http_version version;
@@ -114,6 +110,10 @@ typedef struct {
   int num_headers;
   char header[2][MAX_ELEMENT_SIZE]; /* store header every time
                                        `parse_header_line` */
+
+  /* preserve buffer_t state, so when recv new data, we can keep parsing */
+  char *next_parse_pos; /* parser position in buffer_t */
+  int state;            /* parser state */
 
   /* private members, do not modify !!! */
   char *method_begin;
