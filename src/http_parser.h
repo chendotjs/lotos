@@ -51,9 +51,6 @@
 
 #define MAX_ELEMENT_SIZE (2048)
 
-typedef int (*method_cb_t)(int method);
-typedef int (*data_cb_t)(const char *begin, const char *end);
-
 /* basic http method */
 typedef enum {
   HTTP_DELETE,
@@ -97,18 +94,12 @@ typedef enum {
   S_HD_VAL,
   S_HD_CR_AFTER_VAL,
   S_HD_LF_AFTER_VAL,
-
 } parser_state;
 
 typedef struct {
   /* preserve buffer_t state, so when recv new data, we can keep parsing */
   char *next_parse_pos; /* parser position in buffer_t */
   int state;            /* parser state */
-
-  /* callback functions */
-  method_cb_t on_method;
-  data_cb_t on_header_field;
-  data_cb_t on_header_value;
 
   /* parsed request line result */
   http_method method;
@@ -131,7 +122,6 @@ typedef struct {
   char *header_colon_pos;
   char *header_val_begin;
   char *header_val_end;
-
 } parse_settings;
 
 static inline void parse_settings_init(parse_settings *st, buffer_t *b) {

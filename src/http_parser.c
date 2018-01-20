@@ -59,9 +59,6 @@ int parse_request_line(buffer_t *b, parse_settings *st) {
         break;
       case ' ': {
         st->method = parse_method(st->method_begin, p);
-        if (st->on_method) {
-          st->on_method(st->method);
-        }
         if (st->method == HTTP_INVALID)
           return INVALID_REQUEST;
         st->state = S_RL_SP_BEFORE_URL;
