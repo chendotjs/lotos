@@ -1,6 +1,7 @@
 #include "../buffer.h"
 #include "../http_parser.h"
 #include "../misc.h"
+#include "../ssstr.h"
 #include "minctest/minctest.h"
 #include <stdio.h>
 #include <string.h>
@@ -15,9 +16,9 @@ void test_method1() {
   lok(ar.method_begin == buffer->buf);
   lok(ar.next_parse_pos == buffer_end(buffer));
   lequal(HTTP_POST, ar.method);
-  lsequal(ar.request_url, "/");
-  lsequal(ar.request_path, "/");
-  lsequal(ar.query_string, "");
+  lok(ssstr_equal(&ar.request_url, "/"));
+  lok(ssstr_equal(&ar.request_path, "/"));
+  lok(ssstr_equal(&ar.query_string, ""));
 }
 
 /* so parse_request_line can be called many times when recv new data */
@@ -41,8 +42,8 @@ void test_method2() {
 
   buffer_cat(buffer, " ", 1);
   status = parse_request_line(buffer, &ar);
-  lsequal(ar.request_path, "/s");
-  lsequal(ar.query_string, "wd=hello%20world");
+  lok(ssstr_equal(&ar.request_path, "/s"));
+  lok(ssstr_equal(&ar.query_string, "wd=hello%20world"));
 }
 
 /* valid request line */
@@ -59,9 +60,9 @@ void test_method3() {
   lequal(HTTP_GET, ar.method);
   lequal(ar.version.http_major, 1);
   lequal(ar.version.http_minor, 1);
-  lsequal(ar.request_url, "/api/set/?wd=123abc");
-  lsequal(ar.request_path, "/api/set/");
-  lsequal(ar.query_string, "wd=123abc");
+  lok(ssstr_equal(&ar.request_url, "/api/set/?wd=123abc"));
+  lok(ssstr_equal(&ar.request_path, "/api/set/"));
+  lok(ssstr_equal(&ar.query_string, "wd=123abc"));
   lequal(OK, status);
   lok(ar.next_parse_pos[0] = 'H');
   lok(ar.next_parse_pos[1] = 'o');
@@ -82,7 +83,7 @@ void test_method4() {
   lequal(HTTP_POST, ar.method);
   lequal(ar.version.http_major, 1);
   lequal(ar.version.http_minor, 10);
-  lsequal(ar.request_url, "/api/set/?wd=123abc");
+  lok(ssstr_equal(&ar.request_url, "/api/set/?wd=123abc"));
   lequal(ERROR, status);
 }
 
@@ -148,9 +149,9 @@ void test_method6() {
   lequal(HTTP_GET, ar.method);
   lequal(ar.version.http_major, 1);
   lequal(ar.version.http_minor, 1);
-  lsequal(ar.request_url, "/favicon.ico");
-  lsequal(ar.request_path, "/favicon.ico");
-  lsequal(ar.query_string, "");
+  lok(ssstr_equal(&ar.request_url, "/favicon.ico"));
+  lok(ssstr_equal(&ar.request_path, "/favicon.ico"));
+  lok(ssstr_equal(&ar.query_string, ""));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);

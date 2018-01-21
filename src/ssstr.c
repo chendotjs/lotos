@@ -1,3 +1,4 @@
+#include "misc.h"
 #include "ssstr.h"
 #include <stdio.h>
 #include <string.h>
@@ -32,4 +33,11 @@ int ssstr_cmp(const ssstr_t *l, const ssstr_t *r) {
   }
 
   return (rlen == llen) ? 0 : ((llen < rlen) ? -1 : 1);
+}
+
+bool ssstr_equal(const ssstr_t *s, const char *cstr) {
+  ssstr_t s2;
+  s2.str = (char *)cstr;
+  s2.len = strlen(cstr);
+  return ssstr_cmp(s, &s2) == 0 ? TRUE : FALSE;
 }

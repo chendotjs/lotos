@@ -70,6 +70,19 @@ void test7() {
   lequal(0, ssstr_cmp(&s1, &s2));
 }
 
+void test8() {
+  char str1[] = "hello";
+  char str2[] = "hello";
+
+  ssstr_t s1 = SSSTR(str1);
+
+  lok(ssstr_equal(&s1, str2));
+  lok(ssstr_equal(&s1, "hello"));
+  lok(!ssstr_equal(&s1, "hello_world"));
+  lok(!ssstr_equal(&s1, "hullo"));
+
+}
+
 int main(int argc, char const *argv[]) {
   lrun("test1", test1);
   lrun("test2", test2);
@@ -78,6 +91,7 @@ int main(int argc, char const *argv[]) {
   lrun("test5", test5);
   lrun("test6", test6);
   lrun("test7", test7);
+  lrun("test8", test8);
   lresults();
   printf("\n\n");
   return lfails != 0;

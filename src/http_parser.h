@@ -3,6 +3,7 @@
 
 #include "buffer.h"
 #include "misc.h"
+#include "ssstr.h"
 #include <string.h>
 
 /* RFC2616 */
@@ -100,9 +101,9 @@ typedef struct {
   /* parsed request line result */
   http_method method;
   http_version version;
-  char request_url[MAX_ELEMENT_SIZE];
-  char request_path[MAX_ELEMENT_SIZE];
-  char query_string[MAX_ELEMENT_SIZE];
+  ssstr_t request_url;
+  ssstr_t request_path;
+  ssstr_t query_string;
   char mime_extention[MAX_ELEMENT_SIZE / 16];
 
   /* parsed header lines result */

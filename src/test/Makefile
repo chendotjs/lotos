@@ -17,7 +17,7 @@ buffer_test : buffer_test.c ../buffer.c
 ssstr_test : ssstr_test.c ../ssstr.c
 	$(CC) $(CFLAGS) $^ -o $@
 
-parse_test : parse_test.c ../http_parser.c ../buffer.c
+parse_test : parse_test.c ../http_parser.c ../buffer.c ../ssstr.c
 	$(CC) $(CFLAGS) $^ -o $@
 
 test :

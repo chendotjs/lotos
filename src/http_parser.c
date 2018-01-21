@@ -377,28 +377,29 @@ static int parse_method(char *begin, char *end) {
 
 /* simple parse url */
 static int parse_url(char *begin, char *end, parse_archive *ar) {
-  size_t len = end - begin;
-  if (len < sizeof(ar->request_url)) {
-    memcpy(ar->request_url, begin, len);
-    ar->request_url[len] = '\0';
-  } else
-    return URL_OUT_OF_RANGE; /* url too long */
+  ar->request_url.str = begin;
+  ar->request_url.len = end - begin;
+  assert(ar->request_url.len >= 0);
 
   char *p = begin;
   for (; p != end; p++) {
     if (*p == '?') { //  find the firar '?'
-      memcpy(ar->request_path, begin, p - begin);
-      ar->request_path[p - begin] = '\0';
+      ar->request_path.str = begin;
+      ar->request_path.len = p - begin;
 
       p++;
-      memcpy(ar->query_string, p, end - p);
-      ar->query_string[end - p] = '\0';
+      ar->query_string.str = p;
+      ar->query_string.len = end - p;
       break;
     }
   }
   if (p == end) { // no query_string
-    memcpy(ar->request_path, begin, p - begin);
-    ar->request_path[p - begin] = '\0';
+    ar->request_path.str = begin;
+    ar->request_path.len = p - begin;
+
+    ar->query_string.str = p;
+    ar->query_string.len = 0;
   }
+  //TODO: parse extension
   return OK;
 }

@@ -88,9 +88,9 @@ static int request_handle_request_line(request_t *r) {
 
   /* check request_path */
   const char *relative_path = NULL;
-  relative_path = strlen(ar->request_path) == 1 && ar->request_path[0] == '/'
+  relative_path = ar->request_path.len == 1 && ar->request_path.str[0] == '/'
                       ? "./"
-                      : ar->request_path + 1;
+                      : ar->request_path.str + 1;
 
   int fd = openat(server_config.rootdir_fd, relative_path, O_RDONLY);
   if (fd == ERROR) {
