@@ -223,7 +223,9 @@ done:;
  */
 int parse_header_line(buffer_t *b, parse_archive *ar) {
   char ch, *p;
-  bool isCRLF_LINE = TRUE;
+  // NOTE: isCRLF_LINE must be an attribute of ar, cannot be a local variable.
+  // see the change in fix commit.
+  // bool isCRLF_LINE = TRUE;
   for (p = ar->next_parse_pos; p < buffer_end(b); p++) {
     ch = *p;
     switch (ar->state) {
@@ -235,10 +237,11 @@ int parse_header_line(buffer_t *b, parse_archive *ar) {
       case '-':
         ar->state = S_HD_NAME;
         ar->header_line_begin = p;
-        isCRLF_LINE = FALSE;
+        ar->isCRLF_LINE = FALSE;
         break;
       case '\r':
         ar->state = S_HD_CR_AFTER_VAL;
+        ar->isCRLF_LINE = TRUE;
         break;
       case ' ':
       case '\t':
@@ -330,7 +333,7 @@ done:;
   /* put header name and val into header[2] */
   HEADER_SET(&ar->header[0], ar->header_line_begin, ar->header_colon_pos);
   HEADER_SET(&ar->header[1], ar->header_val_begin, ar->header_val_end);
-  return isCRLF_LINE ? CRLF_LINE : OK;
+  return ar->isCRLF_LINE ? CRLF_LINE : OK;
 }
 
 static int parse_method(char *begin, char *end) {

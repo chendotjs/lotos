@@ -122,11 +122,13 @@ typedef struct {
   char *header_colon_pos;
   char *header_val_begin;
   char *header_val_end;
+  bool isCRLF_LINE;
 } parse_archive;
 
 static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {
   memset(ar, 0, sizeof(parse_archive));
   ar->next_parse_pos = b->buf;
+  ar->isCRLF_LINE = TRUE;
 }
 
 /* status code */
