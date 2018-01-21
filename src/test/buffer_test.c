@@ -25,9 +25,7 @@ void test2() {
   free(buffer);
 }
 
-void test3()
-
-{
+void test3() {
   buffer_t *buffer = buffer_new(10);
   lok(buffer->len == 0 && buffer->free == 10);
 
