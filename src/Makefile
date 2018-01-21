@@ -1,8 +1,8 @@
 CFLAGS=-g -std=c99 -Wall
 OPTFLAGS=
 
-OBJS=misc.o ssstr.o lotos_epoll.o buffer.o request.o connection.o \
- http_parser.o server.o main.o
+OBJS=misc.o ssstr.o dict.o lotos_epoll.o buffer.o request.o \
+ connection.o http_parser.o server.o main.o
 
 lotos : $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@ $(OPTFLAGS)

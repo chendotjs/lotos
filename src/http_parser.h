@@ -132,6 +132,7 @@ static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {
 }
 
 /* status code */
+// https://github.com/nodejs/http-parser/blob/b11de0f5c65bcc1b906f85f4df58883b0c133e7b/http_parser.h#L233
 #define HTTP_STATUS_MAP(GEN)                                                   \
   GEN(200, OK, OK)                                                             \
   GEN(301, MOVED_PERMANENTLY, Moved Permanently)                               \

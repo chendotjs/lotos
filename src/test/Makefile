@@ -1,7 +1,7 @@
 CFLAGS=-g -std=c99 -Wall
 OPTFLAGS=
 
-OBJS=slow_client heap_test buffer_test ssstr_test parse_test
+OBJS=slow_client heap_test buffer_test ssstr_test dict_test parse_test
 
 all : $(OBJS)
 
@@ -17,6 +17,9 @@ buffer_test : buffer_test.c ../buffer.c
 ssstr_test : ssstr_test.c ../ssstr.c
 	$(CC) $(CFLAGS) $^ -o $@
 
+dict_test : dict_test.c ../dict.c ../ssstr.c
+	$(CC) $(CFLAGS) $^ -o $@
+
 parse_test : parse_test.c ../http_parser.c ../buffer.c ../ssstr.c
 	$(CC) $(CFLAGS) $^ -o $@
 
@@ -24,6 +27,7 @@ test :
 	./heap_test
 	./buffer_test
 	./ssstr_test
+	./dict_test
 	./parse_test
 
 clean :
