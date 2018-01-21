@@ -33,6 +33,21 @@ int request_init(request_t *r, connection_t *c) {
   return OK;
 }
 
+/* when connection keep-alive, reuse request_t in connection_t */
+int request_reset(request_t *r) {
+  buffer_t *b = r->b;
+  connection_t *c = r->c;
+
+  memset(r, 0, sizeof(request_t));
+  r->b = b;
+  r->c = c;
+  buffer_clear(b);
+  parse_archive_init(&r->par, r->b);
+
+  r->req_handler = request_handle_request_line;
+  return OK;
+}
+
 static int request_recv(request_t *r) {
   char buf[BUFSIZ];
   int len;
@@ -166,7 +181,7 @@ header_done:;
 }
 
 static int request_handle_body(request_t *r) {
-  //TODO: parse body in parse.c and test
+// TODO: parse body in parse.c and test
 #ifndef NDEBUG
   printf("%s done\n", __FUNCTION__);
 #endif

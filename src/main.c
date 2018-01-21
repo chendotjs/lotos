@@ -86,14 +86,16 @@ work:;
         if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
           // send
           char response[] =
-              "HTTP/1.0 200 OK" CRLF "Connection:close" CRLF CRLF
-              "<p>hello, this is lotos web server<p>"
-              "<p>far from complete, wish I can manage it carefully</p>" CRLF;
+              "HTTP/1.1 200 OK" CRLF
+              "Connection: keep-alive"CRLF
+              "Content-Length: 14"CRLF CRLF
+              "<p>hello</p>"CRLF;
 
           int len = send(c->fd, response, sizeof(response) - 1, 0);
           assert(len != -1);
           connection_disable_out(epoll_fd, c);
-          connecion_set_expired(c);
+          connection_enable_in(epoll_fd, c);
+          request_reset(&c->req);
         }
       } // else
     }   // for loop

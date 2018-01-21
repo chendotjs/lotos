@@ -12,12 +12,13 @@ struct request {
   buffer_t *b;                          /* request buffer */
   parse_archive par;                    /* parse_archive */
   int resource_fd;                      /* resource fildes */
-  int resource_size;                    /*resource size*/
+  int resource_size;                    /* resource size */
   int (*req_handler)(struct request *); /* request handler for rl, hd, bd */
 };
 typedef struct request request_t;
 
 extern int request_init(request_t *r, struct connection *c);
+extern int request_reset(request_t *r);
 extern int request_handle(struct connection *c);
 
 #endif
