@@ -2,6 +2,7 @@
 #include "buffer.h"
 #include "connection.h"
 #include "http_parser.h"
+#include "lotos_epoll.h"
 #include "misc.h"
 #include "server.h"
 #include "ssstr.h"
@@ -165,10 +166,14 @@ header_done:;
 }
 
 static int request_handle_body(request_t *r) {
-
+  //TODO: parse body in parse.c and test
 #ifndef NDEBUG
-  printf("request_handle_body done\n");
+  printf("%s done\n", __FUNCTION__);
 #endif
+
+  connection_disable_in(epoll_fd, r->c);
+  connection_enable_out(epoll_fd, r->c);
+
   r->req_handler = NULL; // body parse done !!! no more handlers
   return OK;
 }

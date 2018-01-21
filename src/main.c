@@ -55,7 +55,7 @@ work:;
      * nfds is number of file descriptors ready for the requested I/O or zero
      * if timeout
      */
-    nfds = lotos_epoll_wait(epoll_fd, lotos_events, MAX_EVENTS, 40);
+    nfds = lotos_epoll_wait(epoll_fd, lotos_events, MAX_EVENTS, 20);
     if (nfds == ERROR) {
       // if not caused by signal, cannot recover
       ERR_ON(errno != EINTR, "lotos_epoll_wait");
@@ -91,7 +91,7 @@ work:;
               "<p>far from complete, wish I can manage it carefully</p>" CRLF;
 
           int len = send(c->fd, response, sizeof(response) - 1, 0);
-          printf("send %d bytes\n", len);
+          assert(len != -1);
           connection_disable_out(epoll_fd, c);
           connecion_set_expired(c);
         }
