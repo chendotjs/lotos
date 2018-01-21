@@ -37,7 +37,6 @@ int ssstr_cmp(const ssstr_t *l, const ssstr_t *r) {
 
 bool ssstr_equal(const ssstr_t *s, const char *cstr) {
   ssstr_t s2;
-  s2.str = (char *)cstr;
-  s2.len = strlen(cstr);
+  ssstr_set(&s2, cstr);
   return ssstr_cmp(s, &s2) == 0 ? TRUE : FALSE;
 }

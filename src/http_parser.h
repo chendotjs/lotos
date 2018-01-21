@@ -103,7 +103,7 @@ typedef struct {
   ssstr_t request_url;
   ssstr_t request_path;
   ssstr_t query_string;
-  char mime_extention[MAX_ELEMENT_SIZE / 16];
+  ssstr_t mime_extention;
 
   /* parsed header lines result */
   bool keep_alive;

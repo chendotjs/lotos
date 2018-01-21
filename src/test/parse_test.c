@@ -123,7 +123,7 @@ void test_method5() {
   lequal(CRLF_LINE, status);
 }
 
-/* curl GET */
+/* firefox GET */
 void test_method6() {
   buffer_t *buffer = buffer_init();
   parse_archive ar;
@@ -153,6 +153,7 @@ void test_method6() {
   lok(ssstr_equal(&ar.request_url, "/favicon.ico"));
   lok(ssstr_equal(&ar.request_path, "/favicon.ico"));
   lok(ssstr_equal(&ar.query_string, ""));
+  lok(ssstr_equal(&ar.mime_extention, "ico"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);

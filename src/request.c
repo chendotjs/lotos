@@ -108,7 +108,7 @@ static int request_handle_request_line(request_t *r) {
     }
     fd = html_fd;
     fstat(fd, &st);
-    strncpy(ar->mime_extention, "html", sizeof(ar->mime_extention));
+    ssstr_set(&ar->mime_extention, "html");
   }
   r->resource_fd = fd;
   r->resource_size = st.st_size;

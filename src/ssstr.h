@@ -26,6 +26,11 @@ static inline void ssstr_init(ssstr_t *s) {
   s->len = 0;
 }
 
+static inline void ssstr_set(ssstr_t *s, const char *cstr) {
+  s->str = (char *)cstr;
+  s->len = strlen(cstr);
+}
+
 extern void ssstr_print(const ssstr_t *s);
 extern int ssstr_cmp(const ssstr_t *l, const ssstr_t *r);
 extern bool ssstr_equal(const ssstr_t *s, const char *cstr);
