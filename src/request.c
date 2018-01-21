@@ -1,11 +1,18 @@
+#define _GNU_SOURCE
 #include "buffer.h"
 #include "connection.h"
+#include "http_parser.h"
 #include "misc.h"
+#include "server.h"
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 int request_init(request_t *r, connection_t *c) {
   assert(r != NULL);
@@ -49,12 +56,62 @@ int request_handle(connection_t *c) {
   if (status == ERROR || status == OK) /* error or client close */
     return ERROR;
   /**
-   * TODO: parse request
+   * TODO:
+   * parse request main process:
+   *
    * do {
    *  status = parse_request_line()
    *  status = parse_header()
    *  *status = parse_body()
    * }  while (status != error  && !parse_done)
    */
+
   return status;
+}
+
+static int request_handle_request_line(request_t *r) {
+  int status;
+  status = parse_request_line(r->b, &r->par);
+  if (status == AGAIN) // not a complete request line
+    return AGAIN;
+  if (status != OK) { // INVALID_REQUEST or URL_OUT_OF_RANGE
+    // TODO: send error response to client
+    return status;
+  }
+  // status = OK now
+  parse_archive *ar = &(r->par);
+  /* check http version */
+  if (ar->version.http_major > 1 || ar->version.http_minor > 1) {
+    // TODO: send 505 error response to client
+  }
+  ar->keep_alive = (ar->version.http_major == 1 && ar->version.http_minor == 1);
+
+  /* check request_path */
+  const char *relative_path = NULL;
+  relative_path = strlen(ar->request_path) == 1 && ar->request_path[0] == '/'
+                      ? "./"
+                      : ar->request_path + 1;
+
+  int fd = openat(server_config.rootdir_fd, relative_path, O_RDONLY);
+  if (fd == ERROR) {
+    // TODO: send 404 error response to client
+  }
+  struct stat st;
+  fstat(fd, &st);
+
+  if (S_ISDIR(st.st_mode)) { // substitute dir to index.html
+    // fd is a dir fildes
+    int html_fd = openat(fd, "index.html", O_RDONLY);
+    close(fd);
+    if (fd == ERROR) {
+      // TODO: send 404 error response to client
+    }
+    fd = html_fd;
+    fstat(fd, &st);
+    strncpy(ar->mime_extention, "html", sizeof(ar->mime_extention));
+  }
+  r->resource_fd = fd;
+  r->resource_size = st.st_size;
+
+  return OK;
 }

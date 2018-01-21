@@ -11,6 +11,7 @@ typedef struct {
   int timeout;     /* connection expired time */
   uint32_t worker; /* worker num */
   char *rootdir;   /* html root directory */
+  int rootdir_fd;  /* fildes of rootdir */
 } config_t;
 
 extern config_t server_config;

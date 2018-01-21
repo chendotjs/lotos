@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -14,6 +15,7 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -59,6 +61,8 @@ int config_parse(int argc, char *argv[]) {
   if (server_config.rootdir != NULL &&
       (dirp = opendir(server_config.rootdir)) != NULL) {
     closedir(dirp);
+    server_config.rootdir_fd = open(server_config.rootdir, O_RDONLY);
+    ERR_ON(server_config.rootdir_fd == ERROR, server_config.rootdir);
     return OK;
   } else {
     perror(server_config.rootdir);
