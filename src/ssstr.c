@@ -7,9 +7,10 @@ void ssstr_print(const ssstr_t *s) {
   if (s == NULL || s->str == NULL)
     return;
   for (int i = 0; i < s->len; i++) {
-    printf("%c\n", s->str[0]);
+    printf("%c", s->str[i]);
     fflush(stdout);
   }
+  printf("\n");
 }
 
 int ssstr_cmp(const ssstr_t *l, const ssstr_t *r) {

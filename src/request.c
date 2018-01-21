@@ -4,6 +4,7 @@
 #include "http_parser.h"
 #include "misc.h"
 #include "server.h"
+#include "ssstr.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -14,6 +15,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+static int request_handle_request_line(request_t *r);
+static int request_handle_headers(request_t *r);
+static int request_handle_body(request_t *r);
+
 int request_init(request_t *r, connection_t *c) {
   assert(r != NULL);
   memset(r, 0, sizeof(request_t));
@@ -22,6 +27,8 @@ int request_init(request_t *r, connection_t *c) {
   if (r->b == NULL)
     return ERROR;
   parse_archive_init(&r->par, r->b);
+
+  r->req_handler = request_handle_request_line;
   return OK;
 }
 
@@ -64,7 +71,15 @@ int request_handle(connection_t *c) {
    *  status = parse_header()
    *  *status = parse_body()
    * }  while (status != error  && !parse_done)
+   *
+   * if status == AGAIN, then exit `request_handle` and try to recv in the next
+   * loop.
+   * if status == ERROR, then exit `request_handle` and expire this connection
+   *
    */
+  do {
+    status = r->req_handler(r);
+  } while (r->req_handler != NULL && status == OK);
 
   return status;
 }
@@ -112,6 +127,48 @@ static int request_handle_request_line(request_t *r) {
   }
   r->resource_fd = fd;
   r->resource_size = st.st_size;
+  r->req_handler = request_handle_headers;
+  return OK;
+}
 
+static int request_handle_headers(request_t *r) {
+  int status;
+  buffer_t *b = r->b;
+  parse_archive *ar = &r->par;
+  while (TRUE) {
+    status = parse_header_line(b, ar);
+    switch (status) {
+    /* not a complete header */
+    case AGAIN:
+      return AGAIN;
+    /* header invalid */
+    case INVALID_REQUEST:
+      // TODO: send error response to client
+      return ERROR;
+    /* all headers completed */
+    case CRLF_LINE:
+      goto header_done;
+    /* a header completed */
+    case OK:
+#ifndef NDEBUG
+      printf("recv header:\n");
+      ssstr_print(&r->par.header[0]);
+      ssstr_print(&r->par.header[1]);
+#endif
+      // TODO: handle header individually
+      break;
+    }
+  }
+header_done:;
+  r->req_handler = request_handle_body;
+  return OK;
+}
+
+static int request_handle_body(request_t *r) {
+
+#ifndef NDEBUG
+  printf("request_handle_body done\n");
+#endif
+  r->req_handler = NULL; // body parse done !!! no more handlers
   return OK;
 }
