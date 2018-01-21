@@ -74,7 +74,7 @@ static int request_handle_request_line(request_t *r) {
   status = parse_request_line(r->b, &r->par);
   if (status == AGAIN) // not a complete request line
     return AGAIN;
-  if (status != OK) { // INVALID_REQUEST or URL_OUT_OF_RANGE
+  if (status != OK) { // INVALID_REQUEST
     // TODO: send error response to client
     return status;
   }

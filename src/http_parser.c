@@ -11,16 +11,11 @@
 #define STR6_EQ(p, q) (STR3_EQ(p, q) && STR3_EQ(p + 3, q + 3))
 #define STR7_EQ(p, q) (STR3_EQ(p, q) && STR4_EQ(p + 3, q + 3))
 
-#define HEADER_CPY(dst, src_beg, src_end, dst_size)                            \
+#define HEADER_SET(header, str_beg, str_end)                                   \
   do {                                                                         \
-    assert(src_beg <= src_end);                                                \
-    size_t len = ((src_end) - (src_beg));                                      \
-    if (len < dst_size) {                                                      \
-      memcpy(dst, src_beg, len);                                               \
-      dst[len] = '\0';                                                         \
-    } else {                                                                   \
-      return INVALID_REQUEST;                                                  \
-    }                                                                          \
+    assert(str_beg <= str_end);                                                \
+    (header)->str = str_beg;                                                   \
+    (header)->len = (str_end) - (str_beg);                                     \
   } while (0)
 
 static int parse_method(char *begin, char *end);
@@ -32,7 +27,6 @@ static int parse_url(char *begin, char *end, parse_archive *ar);
  * OK: request line OK
  * AGAIN: parse to the end of buffer, but no complete request line
  * INVALID_REQUEST request not valid
- * URL_OUT_OF_RANGE url too long
  */
 int parse_request_line(buffer_t *b, parse_archive *ar) {
   char ch;
@@ -333,11 +327,9 @@ done:;
   ar->state = S_HD_BEGIN;
   ar->num_headers++;
 
-  /* put header name and val into header[2][MAX_ELEMENT_SIZE] */
-  HEADER_CPY(ar->header[0], ar->header_line_begin, ar->header_colon_pos,
-             sizeof(ar->header[0]));
-  HEADER_CPY(ar->header[1], ar->header_val_begin, ar->header_val_end,
-             sizeof(ar->header[1]));
+  /* put header name and val into header[2] */
+  HEADER_SET(&ar->header[0], ar->header_line_begin, ar->header_colon_pos);
+  HEADER_SET(&ar->header[1], ar->header_val_begin, ar->header_val_end);
   return isCRLF_LINE ? CRLF_LINE : OK;
 }
 
@@ -400,6 +392,6 @@ static int parse_url(char *begin, char *end, parse_archive *ar) {
     ar->query_string.str = p;
     ar->query_string.len = 0;
   }
-  //TODO: parse extension
+  // TODO: parse extension
   return OK;
 }

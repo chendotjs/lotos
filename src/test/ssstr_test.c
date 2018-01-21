@@ -80,7 +80,6 @@ void test8() {
   lok(ssstr_equal(&s1, "hello"));
   lok(!ssstr_equal(&s1, "hello_world"));
   lok(!ssstr_equal(&s1, "hullo"));
-
 }
 
 int main(int argc, char const *argv[]) {

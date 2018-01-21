@@ -48,7 +48,6 @@
 
 #define INVALID_REQUEST (-1)
 #define CRLF_LINE (2)
-#define URL_OUT_OF_RANGE (3)
 
 #define MAX_ELEMENT_SIZE (2048)
 
@@ -110,8 +109,7 @@ typedef struct {
   bool keep_alive;
   int content_length;
   int num_headers;
-  char header[2][MAX_ELEMENT_SIZE]; /* store header every time
-                                       `parse_header_line` */
+  ssstr_t header[2]; /* store header every time` parse_header_line` */
 
   /* preserve buffer_t state, so when recv new data, we can keep parsing */
   char *next_parse_pos; /* parser position in buffer_t */

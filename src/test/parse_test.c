@@ -103,19 +103,20 @@ void test_method5() {
   buffer_cat(buffer, req_line, strlen(req_line));
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "User-Agent");
-  lsequal(ar.header[1], "curl/7.18.0 (i486-pc-linux-gnu) libcurl/7.18.0 "
-                        "OpenSSL/0.9.8g zlib/1.2.3.3 libidn/1.1");
+  lok(ssstr_equal(&ar.header[0], "User-Agent"));
+  lok(ssstr_equal(&ar.header[1],
+                  "curl/7.18.0 (i486-pc-linux-gnu) libcurl/7.18.0 "
+                  "OpenSSL/0.9.8g zlib/1.2.3.3 libidn/1.1"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Host");
-  lsequal(ar.header[1], "0.0.0.0=5000");
+  lok(ssstr_equal(&ar.header[0], "Host"));
+  lok(ssstr_equal(&ar.header[1], "0.0.0.0=5000"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Accept");
-  lsequal(ar.header[1], "*/*");
+  lok(ssstr_equal(&ar.header[0], "Accept"));
+  lok(ssstr_equal(&ar.header[1], "*/*"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
@@ -155,45 +156,47 @@ void test_method6() {
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Host");
-  lsequal(ar.header[1], "0.0.0.0=5000");
+  lok(ssstr_equal(&ar.header[0], "Host"));
+  lok(ssstr_equal(&ar.header[1], "0.0.0.0=5000"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "User-Agent");
-  lsequal(ar.header[1], "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9) "
-                        "Gecko/2008061015 Firefox/3.0");
+  lok(ssstr_equal(&ar.header[0], "User-Agent"));
+  lok(ssstr_equal(&ar.header[1],
+                  "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9) "
+                  "Gecko/2008061015 Firefox/3.0"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Accept");
-  lsequal(ar.header[1],
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+  lok(ssstr_equal(&ar.header[0], "Accept"));
+  lok(ssstr_equal(
+      &ar.header[1],
+      "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Accept-Language");
-  lsequal(ar.header[1], "en-us,en;q=0.5");
+  lok(ssstr_equal(&ar.header[0], "Accept-Language"));
+  lok(ssstr_equal(&ar.header[1], "en-us,en;q=0.5"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Accept-Encoding");
-  lsequal(ar.header[1], "gzip,deflate");
+  lok(ssstr_equal(&ar.header[0], "Accept-Encoding"));
+  lok(ssstr_equal(&ar.header[1], "gzip,deflate"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Accept-Charset");
-  lsequal(ar.header[1], "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+  lok(ssstr_equal(&ar.header[0], "Accept-Charset"));
+  lok(ssstr_equal(&ar.header[1], "ISO-8859-1,utf-8;q=0.7,*;q=0.7"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Keep-Alive");
-  lsequal(ar.header[1], "300");
+  lok(ssstr_equal(&ar.header[0], "Keep-Alive"));
+  lok(ssstr_equal(&ar.header[1], "300"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
-  lsequal(ar.header[0], "Connection");
-  lsequal(ar.header[1], "keep-alive");
+  lok(ssstr_equal(&ar.header[0], "Connection"));
+  lok(ssstr_equal(&ar.header[1], "keep-alive"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);
