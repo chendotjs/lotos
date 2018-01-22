@@ -96,6 +96,36 @@ typedef enum {
   S_HD_LF_AFTER_VAL,
 } parser_state;
 
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
+typedef enum {
+  TE_CHUNKED,
+  TE_COMPRESS,
+  TE_DEFLATE,
+  TE_GZIP,
+  TE_IDENTITY,
+} transfer_encoding_t;
+
+/* some of the request headers we may parse */
+typedef struct {
+  ssstr_t cache_control;
+  ssstr_t connection;
+  ssstr_t date;
+  ssstr_t transfer_encoding;
+  ssstr_t accept;
+  ssstr_t accept_charset;
+  ssstr_t accept_encoding;
+  ssstr_t accept_language;
+  ssstr_t cookie;
+  ssstr_t host;
+  ssstr_t if_modified_since;
+  ssstr_t if_unmodified_since;
+  ssstr_t max_forwards;
+  ssstr_t range;
+  ssstr_t referer;
+  ssstr_t user_agent;
+  ssstr_t content_length;
+} request_headers_t;
+
 typedef struct {
   /* parsed request line result */
   http_method method;
@@ -106,10 +136,13 @@ typedef struct {
   ssstr_t mime_extention;
 
   /* parsed header lines result */
-  bool keep_alive;
-  int content_length;
+  bool keep_alive;       /* connection keep alive */
+  int content_length;    /* request body content_length */
+  int transfer_encoding; /* affect body recv strategy */
+  request_headers_t req_headers;
+
   int num_headers;
-  ssstr_t header[2]; /* store header every time` parse_header_line` */
+  ssstr_t header[2]; /* store header every time `parse_header_line` */
 
   /* preserve buffer_t state, so when recv new data, we can keep parsing */
   char *next_parse_pos; /* parser position in buffer_t */
@@ -129,6 +162,7 @@ static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {
   memset(ar, 0, sizeof(parse_archive));
   ar->next_parse_pos = b->buf;
   ar->isCRLF_LINE = TRUE;
+  ar->content_length = -1; // no Content-Length header
 }
 
 extern int parse_request_line(buffer_t *b, parse_archive *ar);

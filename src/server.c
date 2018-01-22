@@ -74,6 +74,7 @@ int config_parse(int argc, char *argv[]) {
 static void sigint_handler(int signum) {
   if (signum == SIGINT) {
     mime_dict_free();
+    header_handler_dict_free();
 
     lotos_log(LOG_INFO, "lotos(%u) gracefully exit...", getpid());
     kill(-getpid(), SIGINT);
@@ -85,6 +86,7 @@ int server_setup(uint16_t port) {
   signal(SIGINT, sigint_handler);
 
   mime_dict_init();
+  header_handler_dict_init();
 
   listen_fd = make_server_socket(port, 1024);
   ABORT_ON(listen_fd == ERROR, "make_server_socket");

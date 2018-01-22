@@ -1,16 +1,25 @@
-#include "ssstr.h"
 #include "misc.h"
+#include "ssstr.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
 void ssstr_print(const ssstr_t *s) {
   if (s == NULL || s->str == NULL)
     return;
-  for (int i = 0; i < s->len; i++) {
+  int i;
+  for (i = 0; i < s->len; i++) {
     printf("%c", s->str[i]);
     fflush(stdout);
   }
   printf("\n");
+}
+
+void ssstr_tolower(ssstr_t *s) {
+  int i;
+  for (i = 0; i < s->len; i++) {
+    s->str[i] = tolower(s->str[i]);
+  }
 }
 
 int ssstr_cmp(const ssstr_t *l, const ssstr_t *r) {

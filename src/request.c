@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "buffer.h"
 #include "connection.h"
+#include "dict.h"
 #include "http_parser.h"
 #include "lotos_epoll.h"
 #include "misc.h"
@@ -19,6 +20,54 @@
 static int request_handle_request_line(request_t *r);
 static int request_handle_headers(request_t *r);
 static int request_handle_body(request_t *r);
+
+typedef int (*header_handle_method)(request_t *);
+static int request_handle_hd_base(request_t *r);
+static int request_handle_hd_connection(request_t *r);
+static int request_handle_hd_content_length(request_t *r);
+static int request_handle_hd_transfer_encoding(request_t *r);
+
+typedef struct {
+  ssstr_t hd;
+  header_handle_method func;
+} header_func;
+
+#define XX(hd, func)                                                           \
+  { SSSTR(hd), func }
+
+static header_func hf_list[] = {
+    XX("accept", request_handle_hd_base),
+    XX("accept-charset", request_handle_hd_base),
+    XX("accept-encoding", request_handle_hd_base),
+    XX("accept-language", request_handle_hd_base),
+    XX("cache-control", request_handle_hd_base),
+    XX("content-length", request_handle_hd_content_length),
+    XX("connection", request_handle_hd_connection),
+    XX("cookie", request_handle_hd_base),
+    XX("date", request_handle_hd_base),
+    XX("host", request_handle_hd_base),
+    XX("if-modified-since", request_handle_hd_base),
+    XX("if-unmodified-since", request_handle_hd_base),
+    XX("max-forwards", request_handle_hd_base),
+    XX("range", request_handle_hd_base),
+    XX("referer", request_handle_hd_base),
+    XX("transfer-encoding", request_handle_hd_transfer_encoding),
+    XX("user-agent", request_handle_hd_base),
+};
+#undef XX
+
+dict_t header_handler_dict;
+
+void header_handler_dict_init() {
+  dict_init(&header_handler_dict);
+  size_t nsize = sizeof(hf_list) / sizeof(hf_list[0]);
+  int i;
+  for (i = 0; i < nsize; i++) {
+    dict_put(&header_handler_dict, &hf_list[i].hd, (void *)hf_list[i].func);
+  }
+}
+
+void header_handler_dict_free() { dict_free(&header_handler_dict); }
 
 int request_init(request_t *r, connection_t *c) {
   assert(r != NULL);
@@ -170,12 +219,18 @@ static int request_handle_headers(request_t *r) {
       goto header_done;
     /* a header completed */
     case OK:
+      ssstr_tolower(&r->par.header[0]);
 #ifndef NDEBUG
       printf("recv header:\n");
       ssstr_print(&r->par.header[0]);
       ssstr_print(&r->par.header[1]);
 #endif
       // TODO: handle header individually
+      header_handle_method func =
+          dict_get(&header_handler_dict, &r->par.header[0], NULL);
+      if (func != NULL) {
+        func(r);
+      }
       break;
     }
   }
@@ -196,3 +251,14 @@ static int request_handle_body(request_t *r) {
   r->req_handler = NULL; // body parse done !!! no more handlers
   return OK;
 }
+
+int request_handle_hd_base(request_t *r) {
+  printf("%d %s\n", __LINE__, __FUNCTION__);
+  return OK;
+}
+
+int request_handle_hd_connection(request_t *r) { return OK; }
+
+int request_handle_hd_content_length(request_t *r) { return OK; }
+
+int request_handle_hd_transfer_encoding(request_t *r) { return OK; }
