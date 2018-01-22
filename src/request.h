@@ -5,7 +5,7 @@
 #include "connection.h"
 #include "http_parser.h"
 #include "misc.h"
-#include <assert.h>
+#include "response.h"
 
 struct request {
   struct connection *c;                 /* belonged connection */

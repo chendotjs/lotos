@@ -63,7 +63,7 @@ static int request_recv(request_t *r) {
     }
     if (len == ERROR) {
       if (errno != EAGAIN) {
-        perror("recv");
+        lotos_log(LOG_ERR, "recv: %s", strerror(errno));
         return ERROR;
       } else
         return AGAIN; /* does not have data now */
