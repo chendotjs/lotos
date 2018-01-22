@@ -24,10 +24,11 @@ int request_init(request_t *r, connection_t *c) {
   assert(r != NULL);
   memset(r, 0, sizeof(request_t));
   r->c = c;
-  r->b = buffer_init();
-  if (r->b == NULL)
+  r->ib = buffer_init();
+  r->ob = buffer_init();
+  if (r->ib == NULL || r->ob == NULL)
     return ERROR;
-  parse_archive_init(&r->par, r->b);
+  parse_archive_init(&r->par, r->ib);
 
   r->req_handler = request_handle_request_line;
   return OK;
@@ -35,14 +36,17 @@ int request_init(request_t *r, connection_t *c) {
 
 /* when connection keep-alive, reuse request_t in connection_t */
 int request_reset(request_t *r) {
-  buffer_t *b = r->b;
+  buffer_t *ib = r->ib;
+  buffer_t *ob = r->ob;
   connection_t *c = r->c;
 
   memset(r, 0, sizeof(request_t));
-  r->b = b;
+  r->ib = ib;
+  r->ob = ob;
   r->c = c;
-  buffer_clear(b);
-  parse_archive_init(&r->par, r->b);
+  buffer_clear(ib);
+  buffer_clear(ob);
+  parse_archive_init(&r->par, r->ib);
 
   r->req_handler = request_handle_request_line;
   return OK;
@@ -64,10 +68,10 @@ static int request_recv(request_t *r) {
       } else
         return AGAIN; /* does not have data now */
     }
-    buffer_cat(r->b, buf, len); /* append new data to buffer */
+    buffer_cat(r->ib, buf, len); /* append new data to buffer */
 #ifndef NDEBUG
     printf("recv %d bytes:\n", len);
-    buffer_print(r->b);
+    buffer_print(r->ib);
 #endif
   }
   return AGAIN;
@@ -102,7 +106,7 @@ int request_handle(connection_t *c) {
 
 static int request_handle_request_line(request_t *r) {
   int status;
-  status = parse_request_line(r->b, &r->par);
+  status = parse_request_line(r->ib, &r->par);
   if (status == AGAIN) // not a complete request line
     return AGAIN;
   if (status != OK) { // INVALID_REQUEST
@@ -149,7 +153,7 @@ static int request_handle_request_line(request_t *r) {
 
 static int request_handle_headers(request_t *r) {
   int status;
-  buffer_t *b = r->b;
+  buffer_t *b = r->ib;
   parse_archive *ar = &r->par;
   while (TRUE) {
     status = parse_header_line(b, ar);

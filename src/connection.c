@@ -171,8 +171,10 @@ void connection_unregister(connection_t *c) {
 
 static inline void connection_free(connection_t *c) {
   if (c) {
-    buffer_free(c->req.b);
-    c->req.b = NULL;
+    buffer_free(c->req.ib);
+    c->req.ib = NULL;
+    buffer_free(c->req.ob);
+    c->req.ob = NULL;
     free(c);
   }
 }

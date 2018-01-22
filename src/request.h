@@ -9,7 +9,8 @@
 
 struct request {
   struct connection *c;                 /* belonged connection */
-  buffer_t *b;                          /* request buffer */
+  buffer_t *ib;                         /* request buffer */
+  buffer_t *ob;                         /* response buffer */
   parse_archive par;                    /* parse_archive */
   int resource_fd;                      /* resource fildes */
   int resource_size;                    /* resource size */
