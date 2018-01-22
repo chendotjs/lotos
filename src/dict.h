@@ -5,8 +5,8 @@
  * dict used with a small amout of data, no need to rehash
  */
 
-#include "ssstr.h"
 #include "misc.h"
+#include "ssstr.h"
 
 #define DICT_MASK_SIZE (0xFF)
 
@@ -37,6 +37,5 @@ static inline void dict_node_init(dict_node_t *node, ssstr_t *s, void *v,
 extern void dict_put(dict_t *dict, const ssstr_t *key, void *val);
 extern void *dict_get(dict_t *dict, const ssstr_t *key, bool *found_flag);
 extern void dict_free(dict_t *d);
-
 
 #endif

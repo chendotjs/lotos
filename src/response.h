@@ -31,4 +31,7 @@ typedef enum {
 #undef XX
 } http_status;
 
+void mime_dict_init();
+void mime_dict_free();
+
 #endif

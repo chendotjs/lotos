@@ -85,11 +85,8 @@ work:;
         }
         if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
           // send
-          char response[] =
-              "HTTP/1.1 200 OK" CRLF
-              "Connection: keep-alive"CRLF
-              "Content-Length: 14"CRLF CRLF
-              "<p>hello</p>"CRLF;
+          char response[] = "HTTP/1.1 200 OK" CRLF "Connection: keep-alive" CRLF
+                            "Content-Length: 14" CRLF CRLF "<p>hello</p>" CRLF;
 
           int len = send(c->fd, response, sizeof(response) - 1, 0);
           assert(len != -1);
