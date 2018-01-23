@@ -147,8 +147,8 @@ connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
   char ip_addr[32];
   uint16_t port;
   get_internet_address(ip_addr, 32, &port, &c->saddr);
-  printf("fd: %2d %s:%u\n", fd, ip_addr, port);
-  printf("malloc %p %d\n", c, heap_size);
+  lotos_log(LOG_INFO, "fd: %2d %s:%u\n", fd, ip_addr, port);
+  lotos_log(LOG_INFO, "malloc %p %d\n", c, heap_size);
 #endif
 
   return c;
@@ -201,7 +201,7 @@ void connection_prune() {
     if (time(NULL) - c->active_time >= server_config.timeout) {
 #ifndef NDEBUG
       // heap_print();
-      printf("prune %p %d\n", c, heap_size);
+      lotos_log(LOG_INFO, "prune %p %d\n", c, heap_size);
 #endif
       connection_close(c);
     } else
