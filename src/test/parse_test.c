@@ -153,7 +153,7 @@ void test_method6() {
   lok(ssstr_equal(&ar.request_url, "/favicon.ico"));
   lok(ssstr_equal(&ar.request_path, "/favicon.ico"));
   lok(ssstr_equal(&ar.query_string, ""));
-  lok(ssstr_equal(&ar.mime_extention, "ico"));
+  lok(ssstr_equal(&ar.mime_extension, "ico"));
   lequal(OK, status);
 
   status = parse_header_line(buffer, &ar);

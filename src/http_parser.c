@@ -398,8 +398,8 @@ static int parse_url(char *begin, char *end, parse_archive *ar) {
   // parse extension
   for (p = end - 1; p != begin; p--) {
     if (*p == '.') {
-      ar->mime_extention.str = p + 1;
-      ar->mime_extention.len = end - p - 1;
+      ar->mime_extension.str = p + 1;
+      ar->mime_extension.len = end - p - 1;
       break;
     } else if (*p == '/')
       break;

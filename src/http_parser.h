@@ -133,7 +133,7 @@ typedef struct {
   ssstr_t request_url;
   ssstr_t request_path;
   ssstr_t query_string;
-  ssstr_t mime_extention;
+  ssstr_t mime_extension;
 
   /* parsed header lines result */
   bool keep_alive;       /* connection keep alive */
