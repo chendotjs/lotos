@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -21,38 +22,40 @@ static int request_handle_request_line(request_t *r);
 static int request_handle_headers(request_t *r);
 static int request_handle_body(request_t *r);
 
-typedef int (*header_handle_method)(request_t *);
-static int request_handle_hd_base(request_t *r);
-static int request_handle_hd_connection(request_t *r);
-static int request_handle_hd_content_length(request_t *r);
-static int request_handle_hd_transfer_encoding(request_t *r);
+typedef int (*header_handle_method)(request_t *, size_t);
+static int request_handle_hd_base(request_t *r, size_t offset);
+static int request_handle_hd_connection(request_t *r, size_t offset);
+static int request_handle_hd_content_length(request_t *r, size_t offset);
+static int request_handle_hd_transfer_encoding(request_t *r, size_t offset);
 
 typedef struct {
   ssstr_t hd;
   header_handle_method func;
+  size_t offset;
 } header_func;
 
-#define XX(hd, func)                                                           \
-  { SSSTR(hd), func }
+#define XX(hd, hd_mn, func)                                                    \
+  { SSSTR(hd), func, offsetof(request_headers_t, hd_mn) }
 
 static header_func hf_list[] = {
-    XX("accept", request_handle_hd_base),
-    XX("accept-charset", request_handle_hd_base),
-    XX("accept-encoding", request_handle_hd_base),
-    XX("accept-language", request_handle_hd_base),
-    XX("cache-control", request_handle_hd_base),
-    XX("content-length", request_handle_hd_content_length),
-    XX("connection", request_handle_hd_connection),
-    XX("cookie", request_handle_hd_base),
-    XX("date", request_handle_hd_base),
-    XX("host", request_handle_hd_base),
-    XX("if-modified-since", request_handle_hd_base),
-    XX("if-unmodified-since", request_handle_hd_base),
-    XX("max-forwards", request_handle_hd_base),
-    XX("range", request_handle_hd_base),
-    XX("referer", request_handle_hd_base),
-    XX("transfer-encoding", request_handle_hd_transfer_encoding),
-    XX("user-agent", request_handle_hd_base),
+    XX("accept", accept, request_handle_hd_base),
+    XX("accept-charset", accept_charset, request_handle_hd_base),
+    XX("accept-encoding", accept_encoding, request_handle_hd_base),
+    XX("accept-language", accept_language, request_handle_hd_base),
+    XX("cache-control", cache_control, request_handle_hd_base),
+    XX("content-length", content_length, request_handle_hd_content_length),
+    XX("connection", connection, request_handle_hd_connection),
+    XX("cookie", cookie, request_handle_hd_base),
+    XX("date", date, request_handle_hd_base),
+    XX("host", host, request_handle_hd_base),
+    XX("if-modified-since", if_modified_since, request_handle_hd_base),
+    XX("if-unmodified-since", if_unmodified_since, request_handle_hd_base),
+    XX("max-forwards", max_forwards, request_handle_hd_base),
+    XX("range", range, request_handle_hd_base),
+    XX("referer", referer, request_handle_hd_base),
+    XX("transfer-encoding", transfer_encoding,
+       request_handle_hd_transfer_encoding),
+    XX("user-agent", user_agent, request_handle_hd_base),
 };
 #undef XX
 
@@ -63,7 +66,7 @@ void header_handler_dict_init() {
   size_t nsize = sizeof(hf_list) / sizeof(hf_list[0]);
   int i;
   for (i = 0; i < nsize; i++) {
-    dict_put(&header_handler_dict, &hf_list[i].hd, (void *)hf_list[i].func);
+    dict_put(&header_handler_dict, &hf_list[i].hd, (void *)&hf_list[i]);
   }
 }
 
@@ -226,10 +229,13 @@ static int request_handle_headers(request_t *r) {
       ssstr_print(&r->par.header[1]);
 #endif
       // TODO: handle header individually
-      header_handle_method func =
-          dict_get(&header_handler_dict, &r->par.header[0], NULL);
+      header_func *hf = dict_get(&header_handler_dict, &r->par.header[0], NULL);
+      if (hf == NULL)
+        break;
+      header_handle_method func = hf->func;
+      size_t offset = hf->offset;
       if (func != NULL) {
-        func(r);
+        func(r, offset);
       }
       break;
     }
@@ -252,13 +258,24 @@ static int request_handle_body(request_t *r) {
   return OK;
 }
 
-int request_handle_hd_base(request_t *r) {
-  printf("%d %s\n", __LINE__, __FUNCTION__);
+int request_handle_hd_base(request_t *r, size_t offset) {
+  parse_archive *ar = &r->par;
+  ssstr_t *header = (ssstr_t *)(((char *)(&ar->req_headers)) + offset);
+  *header = ar->header[1];
   return OK;
 }
 
-int request_handle_hd_connection(request_t *r) { return OK; }
+int request_handle_hd_connection(request_t *r, size_t offset) {
+  request_handle_hd_base(r, offset);
+  return OK;
+}
 
-int request_handle_hd_content_length(request_t *r) { return OK; }
+int request_handle_hd_content_length(request_t *r, size_t offset) {
+  request_handle_hd_base(r, offset);
+  return OK;
+}
 
-int request_handle_hd_transfer_encoding(request_t *r) { return OK; }
+int request_handle_hd_transfer_encoding(request_t *r, size_t offset) {
+  request_handle_hd_base(r, offset);
+  return OK;
+}
