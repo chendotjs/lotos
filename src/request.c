@@ -88,6 +88,8 @@ int request_init(request_t *r, connection_t *c) {
   if (r->ib == NULL || r->ob == NULL)
     return ERROR;
   parse_archive_init(&r->par, r->ib);
+  r->resource_fd = -1;
+  r->status_code = 200;
 
   r->req_handler = request_handle_request_line;
   r->res_handler = response_handle_send_header;
@@ -107,6 +109,8 @@ int request_reset(request_t *r) {
   buffer_clear(ib);
   buffer_clear(ob);
   parse_archive_init(&r->par, r->ib);
+  r->resource_fd = -1;
+  r->status_code = 200;
 
   r->req_handler = request_handle_request_line;
   r->res_handler = response_handle_send_header;
@@ -366,4 +370,8 @@ int response_handle_send_header(struct request *r) { return OK; }
 
 int response_handle_send_file(struct request *r) { return OK; }
 
-int response_assemble_headers(struct request *r) { return OK; }
+// TODO: 添加header
+int response_assemble_headers(struct request *r) {
+  response_append_status_line(r);
+  return OK;
+}

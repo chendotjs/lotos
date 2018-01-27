@@ -59,6 +59,11 @@ void test5() {
   lok(buffer->len == 11 && buffer->free == 11);
 
   lsequal(buffer->buf, "abcdefghijk");
+
+  buffer = buffer_cat_cstr(buffer, "cstr");
+  lok(buffer->len == 15 && buffer->free == 7);
+  lsequal(buffer->buf, "abcdefghijkcstr");
+
   free(buffer);
 }
 

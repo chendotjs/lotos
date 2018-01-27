@@ -5,7 +5,6 @@
 #include "connection.h"
 #include "http_parser.h"
 #include "misc.h"
-#include "response.h"
 
 struct request {
   struct connection *c;                 /* belonged connection */
@@ -14,6 +13,7 @@ struct request {
   parse_archive par;                    /* parse_archive */
   int resource_fd;                      /* resource fildes */
   int resource_size;                    /* resource size */
+  int status_code;                      /* response status code */
   int (*req_handler)(struct request *); /* request handler for rl, hd, bd */
   int (*res_handler)(struct request *); /* response handler for hd bd */
 };

@@ -38,7 +38,7 @@ inline void buffer_clear(buffer_t *pb) {
  * @param buf   [description]
  * @param nbyte [description]
  */
-buffer_t *buffer_cat(buffer_t *pb, const BUFFER buf, size_t nbyte) {
+buffer_t *buffer_cat(buffer_t *pb, const char *buf, size_t nbyte) {
   buffer_t *npb = NULL;
 
   if (nbyte <= buffer_avail(pb)) { // no need to realloc
@@ -65,6 +65,10 @@ buffer_t *buffer_cat(buffer_t *pb, const BUFFER buf, size_t nbyte) {
   npb->free = new_len - npb->len;
   npb->buf[npb->len] = '\0';
   return npb;
+}
+
+buffer_t *buffer_cat_cstr(buffer_t *pb, const char *cstr) {
+  return buffer_cat(pb, cstr, strlen(cstr));
 }
 
 void buffer_print(buffer_t *pb) {

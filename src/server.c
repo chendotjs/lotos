@@ -87,6 +87,7 @@ int server_setup(uint16_t port) {
 
   mime_dict_init();
   header_handler_dict_init();
+  status_table_init();
 
   listen_fd = make_server_socket(port, 1024);
   ABORT_ON(listen_fd == ERROR, "make_server_socket");
