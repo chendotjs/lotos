@@ -55,7 +55,31 @@ const char *requests[] = {
     "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r\n"
     "Keep-Alive: 300\r\n"
     "Connection: keep-alive\r\n"
-    "\r\n"};
+    "\r\n",
+
+#define POST_IDENTITY_BODY_WORLD 3
+    "POST /post_identity_body_world?q=search#hey HTTP/1.1\r\n"
+    "Accept: */*\r\n"
+    "Transfer-Encoding: identity\r\n"
+    "Content-Length: 5\r\n"
+    "\r\n"
+    "World",
+
+#define GET_FUNKY_CONTENT_LENGTH 4
+    "GET /get_funky_content_length_body_hello HTTP/1.0\r\n"
+    "conTENT-Length: 5\r\n"
+    "\r\n"
+    "HELLO",
+
+#define POST_CHUNKED_ALL_YOUR_BASE 5
+    "POST /post_chunked_all_your_base HTTP/1.1\r\n"
+    "Transfer-Encoding: chunked\r\n"
+    "\r\n"
+    "1e\r\nall your base are belong to us\r\n"
+    "0\r\n"
+    "\r\n",
+
+};
 
 int connect_to_server(uint16_t port) {
   static const char *host = "127.0.0.1";

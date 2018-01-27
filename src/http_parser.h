@@ -98,11 +98,11 @@ typedef enum {
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
 typedef enum {
+  TE_IDENTITY = 0,
   TE_CHUNKED,
   TE_COMPRESS,
   TE_DEFLATE,
   TE_GZIP,
-  TE_IDENTITY,
 } transfer_encoding_t;
 
 /* some of the request headers we may parse */
@@ -156,6 +156,7 @@ typedef struct {
   char *header_val_begin;
   char *header_val_end;
   bool isCRLF_LINE;
+  size_t body_received;
 } parse_archive;
 
 static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {
@@ -167,5 +168,6 @@ static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {
 
 extern int parse_request_line(buffer_t *b, parse_archive *ar);
 extern int parse_header_line(buffer_t *b, parse_archive *ar);
+extern int parse_header_body_identity(buffer_t *b, parse_archive *ar);
 
 #endif

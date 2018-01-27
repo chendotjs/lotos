@@ -229,7 +229,7 @@ static int request_handle_headers(request_t *r) {
       ssstr_print(&r->par.header[0]);
       ssstr_print(&r->par.header[1]);
 #endif
-      // TODO: handle header individually
+      // handle header individually
       header_func *hf = dict_get(&header_handler_dict, &r->par.header[0], NULL);
       if (hf == NULL)
         break;
@@ -249,15 +249,33 @@ header_done:;
 }
 
 static int request_handle_body(request_t *r) {
-// TODO: parse body in parse.c and test
-#ifndef NDEBUG
-  printf("%s done\n", __FUNCTION__);
-#endif
+  // TODO: parse body in parse.c and test
+  int status;
+  buffer_t *b = r->ib;
+  parse_archive *ar = &r->par;
+  switch (r->par.transfer_encoding) {
+  case TE_IDENTITY:
+    status = parse_header_body_identity(b, ar);
+    break;
+  default:
+    status = ERROR;
+    // TODO: send error response to client
+    break;
+  }
 
-  connection_disable_in(epoll_fd, r->c);
-  connection_enable_out(epoll_fd, r->c);
+  switch (status) {
+  case AGAIN:
+    return AGAIN;
+  case OK:
+    connection_disable_in(epoll_fd, r->c);
+    connection_enable_out(epoll_fd, r->c);
+    r->req_handler = NULL; // body parse done !!! no more handlers
+    return OK;
+  default:
+    // TODO: send error response to client
+    break;
+  }
 
-  r->req_handler = NULL; // body parse done !!! no more handlers
   return OK;
 }
 
@@ -299,12 +317,16 @@ int request_handle_hd_transfer_encoding(request_t *r, size_t offset) {
   request_handle_hd_base(r, offset);
   ssstr_t *transfer_encoding = &(r->par.req_headers.transfer_encoding);
   if (ssstr_caseequal(transfer_encoding, "chunked")) {
+    // TODO: may implement, send error response to client
     r->par.transfer_encoding = TE_CHUNKED;
   } else if (ssstr_caseequal(transfer_encoding, "compress")) {
+    // TODO: send error response to client
     r->par.transfer_encoding = TE_COMPRESS;
   } else if (ssstr_caseequal(transfer_encoding, "deflate")) {
+    // TODO: send error response to client
     r->par.transfer_encoding = TE_DEFLATE;
   } else if (ssstr_caseequal(transfer_encoding, "gzip")) {
+    // TODO: send error response to client
     r->par.transfer_encoding = TE_GZIP;
   } else if (ssstr_caseequal(transfer_encoding, "identity")) {
     r->par.transfer_encoding = TE_IDENTITY;
