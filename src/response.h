@@ -1,5 +1,7 @@
 #ifndef _RESPONSE_H__
 #define _RESPONSE_H__
+#include "connection.h"
+#include "request.h"
 
 // https://github.com/nodejs/http-parser/blob/b11de0f5c65bcc1b906f85f4df58883b0c133e7b/http_parser.h#L233
 /* status code */
@@ -31,7 +33,7 @@ typedef enum {
 #undef XX
 } http_status;
 
-void mime_dict_init();
-void mime_dict_free();
+extern void mime_dict_init();
+extern void mime_dict_free();
 
 #endif

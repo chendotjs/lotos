@@ -15,12 +15,15 @@ struct request {
   int resource_fd;                      /* resource fildes */
   int resource_size;                    /* resource size */
   int (*req_handler)(struct request *); /* request handler for rl, hd, bd */
+  int (*res_handler)(struct request *); /* response handler for hd bd */
 };
 typedef struct request request_t;
 
 extern int request_init(request_t *r, struct connection *c);
 extern int request_reset(request_t *r);
 extern int request_handle(struct connection *c);
+
+extern int response_handle(struct connection *c);
 
 void header_handler_dict_init();
 void header_handler_dict_free();

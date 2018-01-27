@@ -85,6 +85,12 @@ work:;
         }
         if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
           // send
+          status = response_handle(c);
+          if (status == ERROR)
+            connecion_set_expired(c);
+          else
+            connecion_set_reactivated(c);
+#if 0
           char response[] = "HTTP/1.1 200 OK" CRLF "Connection: keep-alive" CRLF
                             "Content-Length: 14" CRLF CRLF "<p>hello</p>" CRLF;
 
@@ -93,6 +99,7 @@ work:;
           connection_disable_out(epoll_fd, c);
           connection_enable_in(epoll_fd, c);
           request_reset(&c->req);
+#endif
         }
       } // else
     }   // for loop

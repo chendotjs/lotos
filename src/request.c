@@ -5,6 +5,7 @@
 #include "http_parser.h"
 #include "lotos_epoll.h"
 #include "misc.h"
+#include "response.h"
 #include "server.h"
 #include "ssstr.h"
 #include <assert.h>
@@ -21,6 +22,11 @@
 static int request_handle_request_line(request_t *r);
 static int request_handle_headers(request_t *r);
 static int request_handle_body(request_t *r);
+
+static int response_handle_send_buffer(struct request *r);
+static int response_handle_send_header(struct request *r);
+static int response_handle_send_file(struct request *r);
+static int response_assemble_headers(struct request *r);
 
 typedef int (*header_handle_method)(request_t *, size_t);
 /* handlers for specific http headers */
@@ -84,6 +90,7 @@ int request_init(request_t *r, connection_t *c) {
   parse_archive_init(&r->par, r->ib);
 
   r->req_handler = request_handle_request_line;
+  r->res_handler = response_handle_send_header;
   return OK;
 }
 
@@ -102,6 +109,7 @@ int request_reset(request_t *r) {
   parse_archive_init(&r->par, r->ib);
 
   r->req_handler = request_handle_request_line;
+  r->res_handler = response_handle_send_header;
   return OK;
 }
 
@@ -136,7 +144,6 @@ int request_handle(connection_t *c) {
   if (status == ERROR || status == OK) /* error or client close */
     return ERROR;
   /**
-   * TODO:
    * parse request main process:
    *
    * do {
@@ -249,7 +256,6 @@ header_done:;
 }
 
 static int request_handle_body(request_t *r) {
-  // TODO: parse body in parse.c and test
   int status;
   buffer_t *b = r->ib;
   parse_archive *ar = &r->par;
@@ -270,6 +276,7 @@ static int request_handle_body(request_t *r) {
     connection_disable_in(epoll_fd, r->c);
     connection_enable_out(epoll_fd, r->c);
     r->req_handler = NULL; // body parse done !!! no more handlers
+    response_assemble_headers(r);
     return OK;
   default:
     // TODO: send error response to client
@@ -335,3 +342,28 @@ int request_handle_hd_transfer_encoding(request_t *r, size_t offset) {
   }
   return OK;
 }
+
+int response_handle(struct connection *c) {
+  request_t *r = &c->req;
+  int status;
+  do {
+    status = r->res_handler(r);
+  } while (r->res_handler != NULL && status == OK);
+  if (r->res_handler == NULL) { // response done
+    if (r->par.keep_alive) {
+      request_reset(r);
+      connection_disable_out(epoll_fd, c);
+      connection_enable_in(epoll_fd, c);
+    } else
+      return ERROR; // make connection expired
+  }
+  return status;
+}
+
+int response_handle_send_buffer(struct request *r) { return OK; }
+
+int response_handle_send_header(struct request *r) { return OK; }
+
+int response_handle_send_file(struct request *r) { return OK; }
+
+int response_assemble_headers(struct request *r) { return OK; }
