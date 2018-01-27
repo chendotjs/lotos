@@ -7,6 +7,7 @@
 
 #include "misc.h"
 #include <string.h>
+#include <strings.h>
 
 typedef struct {
   char *str;
@@ -35,5 +36,9 @@ extern void ssstr_print(const ssstr_t *s);
 extern void ssstr_tolower(ssstr_t *s);
 extern int ssstr_cmp(const ssstr_t *l, const ssstr_t *r);
 extern bool ssstr_equal(const ssstr_t *s, const char *cstr);
+
+static inline bool ssstr_caseequal(ssstr_t *s, const char *cstr) {
+  return strncasecmp(s->str, cstr, strlen(cstr)) == 0 ? TRUE : FALSE;
+}
 
 #endif

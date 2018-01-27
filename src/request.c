@@ -23,6 +23,7 @@ static int request_handle_headers(request_t *r);
 static int request_handle_body(request_t *r);
 
 typedef int (*header_handle_method)(request_t *, size_t);
+/* handlers for specific http headers */
 static int request_handle_hd_base(request_t *r, size_t offset);
 static int request_handle_hd_connection(request_t *r, size_t offset);
 static int request_handle_hd_content_length(request_t *r, size_t offset);
@@ -235,7 +236,9 @@ static int request_handle_headers(request_t *r) {
       header_handle_method func = hf->func;
       size_t offset = hf->offset;
       if (func != NULL) {
-        func(r, offset);
+        status = func(r, offset);
+        if (status != OK)
+          return OK;
       }
       break;
     }
@@ -258,6 +261,7 @@ static int request_handle_body(request_t *r) {
   return OK;
 }
 
+/* save header value into the proper position of parse_archive.req_headers */
 int request_handle_hd_base(request_t *r, size_t offset) {
   parse_archive *ar = &r->par;
   ssstr_t *header = (ssstr_t *)(((char *)(&ar->req_headers)) + offset);
@@ -267,15 +271,45 @@ int request_handle_hd_base(request_t *r, size_t offset) {
 
 int request_handle_hd_connection(request_t *r, size_t offset) {
   request_handle_hd_base(r, offset);
+  ssstr_t *connection = &(r->par.req_headers.connection);
+  if (ssstr_caseequal(connection, "keep-alive")) {
+    r->par.keep_alive = TRUE;
+  } else if (ssstr_caseequal(connection, "close")) {
+    r->par.keep_alive = FALSE;
+  } else {
+    // TODO: send error response to client
+  }
   return OK;
 }
 
 int request_handle_hd_content_length(request_t *r, size_t offset) {
   request_handle_hd_base(r, offset);
+  ssstr_t *content_length = &(r->par.req_headers.content_length);
+  int len = atoi(content_length->str);
+  if (len <= 0) {
+    // TODO: send error response to client
+  }
+  r->par.content_length = len;
   return OK;
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
+// https://imququ.com/post/content-encoding-header-in-http.html
 int request_handle_hd_transfer_encoding(request_t *r, size_t offset) {
   request_handle_hd_base(r, offset);
+  ssstr_t *transfer_encoding = &(r->par.req_headers.transfer_encoding);
+  if (ssstr_caseequal(transfer_encoding, "chunked")) {
+    r->par.transfer_encoding = TE_CHUNKED;
+  } else if (ssstr_caseequal(transfer_encoding, "compress")) {
+    r->par.transfer_encoding = TE_COMPRESS;
+  } else if (ssstr_caseequal(transfer_encoding, "deflate")) {
+    r->par.transfer_encoding = TE_DEFLATE;
+  } else if (ssstr_caseequal(transfer_encoding, "gzip")) {
+    r->par.transfer_encoding = TE_GZIP;
+  } else if (ssstr_caseequal(transfer_encoding, "identity")) {
+    r->par.transfer_encoding = TE_IDENTITY;
+  } else {
+    // TODO: send error response to client
+  }
   return OK;
 }
