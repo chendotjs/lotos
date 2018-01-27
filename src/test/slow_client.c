@@ -1,3 +1,7 @@
+/**
+ * ./slow_client 8888 [1-9]
+ */
+
 #define _GNU_SOURCE
 #include "../misc.h"
 #include <arpa/inet.h>
@@ -23,6 +27,36 @@
 #include <time.h>
 #include <unistd.h>
 
+const char *requests[] = {
+#define SLOW_CLIENT_GET 0
+    "GET / HTTP/1.1\r\n"
+    "Host:127.0.0.1:8888\r\n"
+    "User-Agent:SLOW_CLIENT\r\n"
+    "\r\n",
+
+#define CURL_GET 1
+    "GET /test HTTP/1.1\r\n"
+    "User-Agent: curl/7.18.0 (i486-pc-linux-gnu) "
+    "libcurl/7.18.0 OpenSSL/0.9.8g zlib/1.2.3.3 "
+    "libidn/1.1\r\n"
+    "Host: 0.0.0.0=5000\r\n"
+    "Accept: */*\r\n"
+    "\r\n",
+
+#define FIREFOX_GET 2
+    "GET /favicon.ico HTTP/1.1\r\n"
+    "Host: 0.0.0.0=5000\r\n"
+    "User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9) "
+    "Gecko/2008061015 Firefox/3.0\r\n"
+    "Accept: "
+    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+    "Accept-Language: en-us,en;q=0.5\r\n"
+    "Accept-Encoding: gzip,deflate\r\n"
+    "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\r\n"
+    "Keep-Alive: 300\r\n"
+    "Connection: keep-alive\r\n"
+    "\r\n"};
+
 int connect_to_server(uint16_t port) {
   static const char *host = "127.0.0.1";
   int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -45,25 +79,19 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   int fd = connect_to_server(atoi(argv[1]));
+  int opt = atoi(argv[2]);
 
-  FILE *file = fopen(argv[2], "r");
-  if (file == NULL) {
-    fprintf(stderr, "open file: %s failed.", argv[2]);
-    return -1;
-  }
+  if (opt >= sizeof(requests) / sizeof(requests[0]))
+    return 1;
 
   /* send begin */
-  while (1) {
-    int ch = getc(file);
-    if (ch == EOF) {
-      break;
-    }
+  for (size_t i = 0; i < strlen(requests[opt]); i++) {
+    int ch = requests[opt][i];
     assert(1 == send(fd, &ch, 1, 0));
     printf("%c", ch);
     fflush(stdout);
     usleep(30 * 1000);
   }
-  assert(2 == send(fd, CRLF, 2, 0));
   /* send end */
 
   /* recv begin */
@@ -79,7 +107,5 @@ int main(int argc, char *argv[]) {
   /* recv end */
 
   close(fd);
-
-  fclose(file);
   return 0;
 }
