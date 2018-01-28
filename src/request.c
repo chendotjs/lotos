@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/sendfile.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -346,6 +347,34 @@ int request_handle_hd_transfer_encoding(request_t *r, size_t offset) {
   return OK;
 }
 
+/**
+ * Return:
+ * OK: all data sent
+ * AGAIN: haven't sent all data
+ * ERROR: error
+ */
+static int response_send(request_t *r) {
+  int len = 0;
+  buffer_t *b = r->ob;
+  char *buf_beg;
+  while (TRUE) {
+    buf_beg = b->buf + r->par.buffer_sent;
+    len = send(r->c->fd, buf_beg, buffer_end(b) - buf_beg, 0);
+    if (len == 0) {
+      buffer_clear(b);
+      r->par.buffer_sent = 0;
+      return OK;
+    } else if (len < 0) {
+      if (errno == EAGAIN)
+        return AGAIN;
+      lotos_log(LOG_ERR, "send: %s", strerror(errno));
+      return ERROR;
+    }
+    r->par.buffer_sent += len;
+  }
+  return AGAIN;
+}
+
 int response_handle(struct connection *c) {
   request_t *r = &c->req;
   int status;
@@ -353,7 +382,7 @@ int response_handle(struct connection *c) {
     status = r->res_handler(r);
   } while (r->res_handler != NULL && status == OK &&
            r->par.response_done != TRUE);
-  if (r->res_handler == NULL) { // response done
+  if (r->par.response_done) { // response done
     if (r->par.keep_alive) {
       request_reset(r);
       connection_disable_out(epoll_fd, c);
@@ -364,22 +393,58 @@ int response_handle(struct connection *c) {
   return status;
 }
 
-int response_handle_send_buffer(struct request *r) { return OK; }
-
-int response_handle_send_file(struct request *r) { return OK; }
-
-// TODO: 添加header
-int response_assemble_buffer(struct request *r) {
-  response_append_status_line(r);
-  response_append_date(r);
+int response_handle_send_buffer(struct request *r) {
+  int status;
+  status = response_send(r);
+  if (status != OK) {
+    return status;
+  } else {
+    // TODO: read err page and sendfile
+    r->res_handler = (r->resource_fd != -1) ? response_handle_send_file : NULL;
+    return OK;
+  }
   return OK;
 }
 
+int response_handle_send_file(struct request *r) {
+  int len;
+  connection_t *c = r->c;
+  while (TRUE) {
+    // zero copy, make it faster
+    len = sendfile(c->fd, r->resource_fd, NULL, r->resource_size);
+    if (len == 0) {
+      r->res_handler = NULL;
+      r->par.response_done = TRUE;
+      close (r->resource_fd);
+      return OK;
+    } else if (len < 0) {
+      if (errno == EAGAIN) {
+        return AGAIN;
+      }
+      lotos_log(LOG_ERR, "send: %s", strerror(errno));
+      return ERROR;
+    }
+  }
+  return OK;
+}
+
+int response_assemble_buffer(struct request *r) {
+  response_append_status_line(r);
+  response_append_date(r);
+  response_append_server(r);
+  response_append_content_type(r);
+  response_append_content_length(r);
+  response_append_connection(r);
+  response_append_crlf(r);
+  return OK;
+}
+
+// TODO: 添加header
 int response_assemble_err_buffer(struct request *r) {
   response_append_status_line(r);
   response_append_date(r);
 
   r->par.keep_alive = FALSE;
-  r->par.response_done = TRUE;
+  response_append_connection(r);
   return OK;
 }

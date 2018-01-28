@@ -4,6 +4,8 @@
 #include "connection.h"
 #include "request.h"
 
+#define SERVER_NAME "lotos/0.1"
+
 // https://github.com/nodejs/http-parser/blob/b11de0f5c65bcc1b906f85f4df58883b0c133e7b/http_parser.h#L233
 /* status code */
 #define HTTP_STATUS_MAP(XX)                                                    \
@@ -80,5 +82,10 @@ extern void status_table_init();
 
 extern void response_append_status_line(struct request *r);
 extern void response_append_date(struct request *r);
+extern void response_append_server(struct request *r);
+extern void response_append_content_type(struct request *r);
+extern void response_append_content_length(struct request *r);
+extern void response_append_connection(struct request *r);
+extern void response_append_crlf(struct request *r);
 
 #endif

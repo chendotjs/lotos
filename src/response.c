@@ -42,7 +42,7 @@ void mime_dict_free() { dict_free(&mime_dict); }
 
 void status_table_init() {
   memset(status_table, 0, sizeof(status_table));
-#define XX(num, name, string) status_table[num] = #string;
+#define XX(num, name, string) status_table[num] = #num " " #string;
   HTTP_STATUS_MAP(XX);
 #undef XX
 }
@@ -69,4 +69,50 @@ void response_append_date(struct request *r) {
                         "Date: %a, %d %b %Y %H:%M:%S GMT" CRLF, tm);
   b->len += len;
   b->free -= len;
+}
+
+void response_append_server(struct request *r) {
+  buffer_t *b = r->ob;
+  buffer_cat_cstr(b, SERVER_NAME CRLF);
+}
+
+void response_append_content_type(struct request *r) {
+  buffer_t *b = r->ob;
+  parse_archive *ar = &r->par;
+
+  ssstr_t content_type;
+  ssstr_t *v = dict_get(&mime_dict, &ar->mime_extension, NULL);
+  if (v != NULL) {
+    content_type = *v;
+  } else {
+    content_type = SSSTR("text/html");
+  }
+
+  buffer_cat_cstr(b, content_type.str);
+  buffer_cat_cstr(b, CRLF);
+}
+
+void response_append_content_length(struct request *r) {
+  buffer_t *b = r->ob;
+  char cl[128];
+  //TODO: modify content_length when sending err page
+  sprintf(cl, "Content-Length: %d" CRLF, r->resource_size);
+  buffer_cat_cstr(b, cl);
+}
+
+void response_append_connection(struct request *r) {
+  buffer_t *b = r->ob;
+  ssstr_t connection;
+  if (r->par.keep_alive) {
+    connection = SSSTR("Connection: keep-alive");
+  } else {
+    connection = SSSTR("Connection: close");
+  }
+  buffer_cat_cstr(b, connection.str);
+  buffer_cat_cstr(b, CRLF);
+}
+
+void response_append_crlf(struct request *r) {
+  buffer_t *b = r->ob;
+  buffer_cat_cstr(b, CRLF);
 }
