@@ -24,9 +24,8 @@ static int request_handle_headers(request_t *r);
 static int request_handle_body(request_t *r);
 
 static int response_handle_send_buffer(struct request *r);
-static int response_handle_send_header(struct request *r);
 static int response_handle_send_file(struct request *r);
-static int response_assemble_headers(struct request *r);
+static int response_assemble_buffer(struct request *r);
 
 typedef int (*header_handle_method)(request_t *, size_t);
 /* handlers for specific http headers */
@@ -92,7 +91,7 @@ int request_init(request_t *r, connection_t *c) {
   r->status_code = 200;
 
   r->req_handler = request_handle_request_line;
-  r->res_handler = response_handle_send_header;
+  r->res_handler = response_handle_send_buffer;
   return OK;
 }
 
@@ -113,7 +112,7 @@ int request_reset(request_t *r) {
   r->status_code = 200;
 
   r->req_handler = request_handle_request_line;
-  r->res_handler = response_handle_send_header;
+  r->res_handler = response_handle_send_buffer;
   return OK;
 }
 
@@ -280,7 +279,7 @@ static int request_handle_body(request_t *r) {
     connection_disable_in(epoll_fd, r->c);
     connection_enable_out(epoll_fd, r->c);
     r->req_handler = NULL; // body parse done !!! no more handlers
-    response_assemble_headers(r);
+    response_assemble_buffer(r);
     return OK;
   default:
     // TODO: send error response to client
@@ -352,7 +351,8 @@ int response_handle(struct connection *c) {
   int status;
   do {
     status = r->res_handler(r);
-  } while (r->res_handler != NULL && status == OK);
+  } while (r->res_handler != NULL && status == OK &&
+           r->par.response_done != TRUE);
   if (r->res_handler == NULL) { // response done
     if (r->par.keep_alive) {
       request_reset(r);
@@ -366,12 +366,20 @@ int response_handle(struct connection *c) {
 
 int response_handle_send_buffer(struct request *r) { return OK; }
 
-int response_handle_send_header(struct request *r) { return OK; }
-
 int response_handle_send_file(struct request *r) { return OK; }
 
 // TODO: 添加header
-int response_assemble_headers(struct request *r) {
+int response_assemble_buffer(struct request *r) {
   response_append_status_line(r);
+  response_append_date(r);
+  return OK;
+}
+
+int response_assemble_err_buffer(struct request *r) {
+  response_append_status_line(r);
+  response_append_date(r);
+
+  r->par.keep_alive = FALSE;
+  r->par.response_done = TRUE;
   return OK;
 }

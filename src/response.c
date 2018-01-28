@@ -1,9 +1,11 @@
-#include "response.h"
+#include "buffer.h"
 #include "connection.h"
 #include "dict.h"
 #include "request.h"
+#include "response.h"
 #include "ssstr.h"
 #include <string.h>
+#include <time.h>
 
 static const char *status_table[512];
 
@@ -59,4 +61,12 @@ void response_append_status_line(struct request *r) {
   buffer_cat_cstr(b, CRLF);
 }
 
-void response_append_date(struct request *r) {}
+void response_append_date(struct request *r) {
+  buffer_t *b = r->ob;
+  time_t now = time(NULL);
+  struct tm *tm = gmtime(&now);
+  size_t len = strftime(b->buf + buffer_len(b), b->free,
+                        "Date: %a, %d %b %Y %H:%M:%S GMT" CRLF, tm);
+  b->len += len;
+  b->free -= len;
+}

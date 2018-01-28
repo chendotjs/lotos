@@ -157,6 +157,7 @@ typedef struct {
   char *header_val_end;
   bool isCRLF_LINE;
   size_t body_received;
+  bool response_done;
 } parse_archive;
 
 static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {
