@@ -181,6 +181,12 @@ static int request_handle_request_line(request_t *r) {
   }
   ar->keep_alive = (ar->version.http_major == 1 && ar->version.http_minor == 1);
 
+  // make `relative_path` a c-style string, really ugly....
+  char *p = ar->request_path.str;
+  while (*p != ' ' && *p != '?')
+    p++;
+  *p = '\0';
+
   /* check request_path */
   const char *relative_path = NULL;
   relative_path = ar->request_path.len == 1 && ar->request_path.str[0] == '/'
@@ -399,7 +405,7 @@ int response_handle_send_buffer(struct request *r) {
       return OK;
     }
 
-    //TODO:
+    // TODO:
     connection_disable_out(epoll_fd, r->c);
     return OK;
   }

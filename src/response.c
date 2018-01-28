@@ -1,8 +1,8 @@
+#include "response.h"
 #include "buffer.h"
 #include "connection.h"
 #include "dict.h"
 #include "request.h"
-#include "response.h"
 #include "ssstr.h"
 #include <string.h>
 #include <time.h>
@@ -96,7 +96,7 @@ void response_append_content_type(struct request *r) {
 void response_append_content_length(struct request *r) {
   buffer_t *b = r->ob;
   char cl[128];
-  //TODO: modify content_length when sending err page
+  // TODO: modify content_length when sending err page
   sprintf(cl, "Content-Length: %d" CRLF, r->resource_size);
   buffer_cat_cstr(b, cl);
 }

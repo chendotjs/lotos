@@ -395,6 +395,9 @@ static int parse_url(char *begin, char *end, parse_archive *ar) {
     ar->query_string.str = p;
     ar->query_string.len = 0;
   }
+
+  // TODO: parser is simple and full of bugs, what if /astro.zip?query=xxx,
+  // mime_extension.len will be wrong
   // parse extension
   for (p = end - 1; p != begin; p--) {
     if (*p == '.') {
