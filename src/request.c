@@ -134,10 +134,6 @@ static int request_recv(request_t *r) {
         return AGAIN; /* does not have data now */
     }
     buffer_cat(r->ib, buf, len); /* append new data to buffer */
-#ifndef NDEBUG
-    printf("recv %d bytes:\n", len);
-    buffer_print(r->ib);
-#endif
   }
   return AGAIN;
 }
@@ -235,11 +231,7 @@ static int request_handle_headers(request_t *r) {
     /* a header completed */
     case OK:
       ssstr_tolower(&r->par.header[0]);
-#ifndef NDEBUG
-      printf("recv header:\n");
-      ssstr_print(&r->par.header[0]);
-      ssstr_print(&r->par.header[1]);
-#endif
+
       // handle header individually
       header_func *hf = dict_get(&header_handler_dict, &r->par.header[0], NULL);
       if (hf == NULL)
@@ -375,7 +367,7 @@ static int response_send(request_t *r) {
     }
     r->par.buffer_sent += len;
   }
-  return AGAIN;
+  return OK;
 }
 
 int response_handle(struct connection *c) {

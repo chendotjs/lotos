@@ -84,6 +84,7 @@ static void sigint_handler(int signum) {
 
 int server_setup(uint16_t port) {
   signal(SIGINT, sigint_handler);
+  signal(SIGPIPE, SIG_IGN); // client close, server write will recv sigpipe
 
   mime_dict_init();
   header_handler_dict_init();
