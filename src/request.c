@@ -360,6 +360,9 @@ static int response_send(request_t *r) {
   while (TRUE) {
     buf_beg = b->buf + r->par.buffer_sent;
     len = send(r->c->fd, buf_beg, buffer_end(b) - buf_beg, 0);
+#ifndef NDEBUG
+    printf("send %d bytes\n", len);
+#endif
     if (len == 0) {
       buffer_clear(b);
       r->par.buffer_sent = 0;
@@ -380,8 +383,7 @@ int response_handle(struct connection *c) {
   int status;
   do {
     status = r->res_handler(r);
-  } while (r->res_handler != NULL && status == OK &&
-           r->par.response_done != TRUE);
+  } while (status == OK && r->par.response_done != TRUE);
   if (r->par.response_done) { // response done
     if (r->par.keep_alive) {
       request_reset(r);
@@ -400,7 +402,13 @@ int response_handle_send_buffer(struct request *r) {
     return status;
   } else {
     // TODO: read err page and sendfile
-    r->res_handler = (r->resource_fd != -1) ? response_handle_send_file : NULL;
+    if (r->resource_fd != -1) {
+      r->res_handler = response_handle_send_file;
+      return OK;
+    }
+
+    //TODO:
+    connection_disable_out(epoll_fd, r->c);
     return OK;
   }
   return OK;
@@ -413,15 +421,14 @@ int response_handle_send_file(struct request *r) {
     // zero copy, make it faster
     len = sendfile(c->fd, r->resource_fd, NULL, r->resource_size);
     if (len == 0) {
-      r->res_handler = NULL;
       r->par.response_done = TRUE;
-      close (r->resource_fd);
+      close(r->resource_fd);
       return OK;
     } else if (len < 0) {
       if (errno == EAGAIN) {
         return AGAIN;
       }
-      lotos_log(LOG_ERR, "send: %s", strerror(errno));
+      lotos_log(LOG_ERR, "sendfile: %s", strerror(errno));
       return ERROR;
     }
   }

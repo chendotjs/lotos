@@ -73,6 +73,7 @@ void response_append_date(struct request *r) {
 
 void response_append_server(struct request *r) {
   buffer_t *b = r->ob;
+  buffer_cat_cstr(b, "Server: ");
   buffer_cat_cstr(b, SERVER_NAME CRLF);
 }
 
@@ -87,7 +88,7 @@ void response_append_content_type(struct request *r) {
   } else {
     content_type = SSSTR("text/html");
   }
-
+  buffer_cat_cstr(b, "Content-Type: ");
   buffer_cat_cstr(b, content_type.str);
   buffer_cat_cstr(b, CRLF);
 }

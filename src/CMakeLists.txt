@@ -21,5 +21,5 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 add_executable(lotos ${SRC})
-
+add_definitions(-DNDEBUG)
 set_property(TARGET lotos PROPERTY C_STANDARD 99)
