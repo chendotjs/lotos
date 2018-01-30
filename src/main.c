@@ -62,20 +62,21 @@ work:;
     }
 
     for (i = 0; i < nfds; i++) {
-      int fd = *((int *)(lotos_events[i].data.ptr));
+      struct epoll_event *curr_event = lotos_events + i;
+      int fd = *((int *)(curr_event->data.ptr));
       if (fd == listen_fd) {
         // accept connection
         server_accept(listen_fd);
       } else {
         // handle connection
-        connection_t *c = lotos_events[i].data.ptr;
+        connection_t *c = curr_event->data.ptr;
         int status;
         assert(c != NULL);
-        /**TODO:
+        /**
          * if use slow_client, every time will recv only 1 byte.When to decide
          * the connection has recv enough data?
          */
-        if (!connecion_is_expired(c) && CONN_IS_IN(c)) {
+        if (!connecion_is_expired(c) && (curr_event->events & EPOLLIN)) {
           // recv
           status = request_handle(c);
           if (status == ERROR)
@@ -83,23 +84,13 @@ work:;
           else
             connecion_set_reactivated(c);
         }
-        if (!connecion_is_expired(c) && CONN_IS_OUT(c)) {
+        if (!connecion_is_expired(c) && (curr_event->events & EPOLLOUT)) {
           // send
           status = response_handle(c);
           if (status == ERROR)
             connecion_set_expired(c);
           else
             connecion_set_reactivated(c);
-#if 0
-          char response[] = "HTTP/1.1 200 OK" CRLF "Connection: keep-alive" CRLF
-                            "Content-Length: 14" CRLF CRLF "<p>hello</p>" CRLF;
-
-          int len = send(c->fd, response, sizeof(response) - 1, 0);
-          assert(len != -1);
-          connection_disable_out(epoll_fd, c);
-          connection_enable_in(epoll_fd, c);
-          request_reset(&c->req);
-#endif
         }
       } // else
     }   // for loop

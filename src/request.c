@@ -358,9 +358,6 @@ static int response_send(request_t *r) {
   while (TRUE) {
     buf_beg = b->buf + r->par.buffer_sent;
     len = send(r->c->fd, buf_beg, buffer_end(b) - buf_beg, 0);
-#ifndef NDEBUG
-    printf("send %d bytes\n", len);
-#endif
     if (len == 0) {
       buffer_clear(b);
       r->par.buffer_sent = 0;

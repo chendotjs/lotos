@@ -124,7 +124,6 @@ connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
     return NULL;
   }
 
-  connection_set_nodelay(c);
   /* fill in connection_t */
   c->fd = fd;
   if (paddr)
@@ -132,6 +131,7 @@ connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
   c->active_time = time(NULL);
 
   set_fd_nonblocking(c->fd);
+  connection_set_nodelay(c);
 
   if (connection_register(c) == ERROR) {
     connection_close(c);
