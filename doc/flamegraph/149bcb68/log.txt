@@ -1,3 +1,0 @@
-ab版本不加keep-alive，纯http1.0模式。
-对比两张图，发现wrk版本在epoll_wait上等待较多，应该是在某处IO上阻塞了。对应的CPU占用也不高，可以考虑使用off-cpu火焰图来定位。
-
