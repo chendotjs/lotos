@@ -7,7 +7,7 @@
 #include <string.h>
 
 /* RFC2616 */
-/* https://www.w3.org/Protocols/rfc2616/rfc2616.html */
+/* Ref: https://www.w3.org/Protocols/rfc2616/rfc2616.html */
 /* This is a simple implementation */
 
 /**
@@ -22,6 +22,11 @@
 
 /**
  *  Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
+ */
+
+/**
+ *  Ref: https://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.2
+ *  http_URL = "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
  */
 
 /**
@@ -67,6 +72,13 @@ typedef struct {
   unsigned short http_minor;
 } http_version;
 
+/* Request URL */
+typedef struct {
+  ssstr_t abs_path;
+  ssstr_t query_string;
+  ssstr_t mime_extension;
+} req_url;
+
 /* parser state used in fsm */
 typedef enum {
   /* request line states */
@@ -94,6 +106,12 @@ typedef enum {
   S_HD_VAL,
   S_HD_CR_AFTER_VAL,
   S_HD_LF_AFTER_VAL,
+
+  /* url states */
+  S_URL_BEGIN,
+  S_URL_ABS_PATH,
+  S_URL_QUERY,
+  S_URL_END,
 } parser_state;
 
 // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
@@ -130,10 +148,13 @@ typedef struct {
   /* parsed request line result */
   http_method method;
   http_version version;
-  ssstr_t request_url;
+  ssstr_t request_url_string;
+  req_url url;
+#if 0
   ssstr_t request_path;
   ssstr_t query_string;
   ssstr_t mime_extension;
+#endif
 
   /* parsed header lines result */
   bool keep_alive;       /* connection keep alive */

@@ -1,5 +1,5 @@
-#include "http_parser.h"
 #include "buffer.h"
+#include "http_parser.h"
 #include "misc.h"
 #include <assert.h>
 #include <string.h>
@@ -80,6 +80,7 @@ int parse_request_line(buffer_t *b, parse_archive *ar) {
       switch (ch) {
       case ' ':
       case '\t':
+        // assume url part has been received completely
         ar->state = S_RL_SP_BEFORE_VERSION;
         int url_status = parse_url(ar->url_begin, p, ar);
         if (url_status)
@@ -370,39 +371,84 @@ static int parse_method(char *begin, char *end) {
   return HTTP_INVALID;
 }
 
+/**
+ * Some Samples:
+ *
+ * /abc/def/
+ * /unp.pdf
+ * /unp.pdf/  `dir`
+ * /abc.def/set?name=chen&val=newbie
+ * /video/life.of.pi.BlueRay.rmvb
+ * /video/life.of.pi.BlueRay  `dir`
+ */
 /* simple parse url */
 static int parse_url(char *begin, char *end, parse_archive *ar) {
-  ar->request_url.str = begin;
-  ar->request_url.len = end - begin;
-  assert(ar->request_url.len >= 0);
+  ar->request_url_string.str = begin;
+  ar->request_url_string.len = end - begin;
+  assert(ar->request_url_string.len >= 0);
 
+  int curr_state = S_URL_BEGIN;
+
+  char ch;
   char *p = begin;
-  for (; p != end; p++) {
-    if (*p == '?') { //  find the firar '?'
-      ar->request_path.str = begin;
-      ar->request_path.len = p - begin;
-
-      p++;
-      ar->query_string.str = p;
-      ar->query_string.len = end - p;
+  for (; p != end + 1; p++) {
+    ch = *p;
+    switch (curr_state) {
+    case S_URL_BEGIN:
+      switch (ch) {
+      case '/':
+        curr_state = S_URL_ABS_PATH;
+        break;
+      default:
+        return ERROR;
+      }
       break;
-    }
-  }
-  if (p == end) { // no query_string
-    ar->request_path.str = begin;
-    ar->request_path.len = p - begin;
 
-    ar->query_string.str = p;
-    ar->query_string.len = 0;
-  }
+    case S_URL_ABS_PATH:
+      switch (ch) {
+      case ' ':
+        ar->url.abs_path.str = begin;
+        ar->url.abs_path.len = p - begin;
 
-  // TODO: parser is simple and full of bugs, what if /astro.zip?query=xxx,
-  // mime_extension.len will be wrong
-  // parse extension
-  for (p = end - 1; p != begin; p--) {
+        ar->url.query_string.str = p;
+        ar->url.query_string.len = 0;
+        curr_state = S_URL_END;
+        break;
+      case '?':
+        ar->url.abs_path.str = begin;
+        ar->url.abs_path.len = p - begin;
+        begin = p + 1;
+        curr_state = S_URL_QUERY;
+        break;
+      default:
+        break;
+      }
+      break;
+
+    case S_URL_QUERY:
+      switch (ch) {
+      case ' ':
+        ar->url.query_string.str = begin;
+        ar->url.query_string.len = p - begin;
+        curr_state = S_URL_END;
+      default:
+        break;
+      }
+      break;
+
+    case S_URL_END:
+      goto parse_extension;
+    } // end switch(curr_state)
+  }   // end for
+
+parse_extension:;
+  // directory extension will be corrected in `request_handle_request_line`
+  char *abs_path_end = ar->url.abs_path.str + ar->url.abs_path.len;
+
+  for (p = abs_path_end; p != ar->url.abs_path.str; p--) {
     if (*p == '.') {
-      ar->mime_extension.str = p + 1;
-      ar->mime_extension.len = end - p - 1;
+      ar->url.mime_extension.str = p + 1;
+      ar->url.mime_extension.len = abs_path_end - p - 1;
       break;
     } else if (*p == '/')
       break;

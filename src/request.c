@@ -182,16 +182,16 @@ static int request_handle_request_line(request_t *r) {
   ar->keep_alive = (ar->version.http_major == 1 && ar->version.http_minor == 1);
 
   // make `relative_path` a c-style string, really ugly....
-  char *p = ar->request_path.str;
+  char *p = ar->url.abs_path.str;
   while (*p != ' ' && *p != '?')
     p++;
   *p = '\0';
 
-  /* check request_path */
+  /* check abs_path */
   const char *relative_path = NULL;
-  relative_path = ar->request_path.len == 1 && ar->request_path.str[0] == '/'
+  relative_path = ar->url.abs_path.len == 1 && ar->url.abs_path.str[0] == '/'
                       ? "./"
-                      : ar->request_path.str + 1;
+                      : ar->url.abs_path.str + 1;
 
   int fd = openat(server_config.rootdir_fd, relative_path, O_RDONLY);
   if (fd == ERROR) {
@@ -209,7 +209,7 @@ static int request_handle_request_line(request_t *r) {
     }
     fd = html_fd;
     fstat(fd, &st);
-    ssstr_set(&ar->mime_extension, "html");
+    ssstr_set(&ar->url.mime_extension, "html");
   }
   r->resource_fd = fd;
   r->resource_size = st.st_size;

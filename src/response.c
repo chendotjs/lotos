@@ -82,7 +82,7 @@ void response_append_content_type(struct request *r) {
   parse_archive *ar = &r->par;
 
   ssstr_t content_type;
-  ssstr_t *v = dict_get(&mime_dict, &ar->mime_extension, NULL);
+  ssstr_t *v = dict_get(&mime_dict, &ar->url.mime_extension, NULL);
   if (v != NULL) {
     content_type = *v;
   } else {
