@@ -1,6 +1,7 @@
 #ifndef _RESPONSE_H__
 #define _RESPONSE_H__
 
+#include "buffer.h"
 #include "connection.h"
 #include "request.h"
 
@@ -79,6 +80,16 @@ extern void mime_dict_init();
 extern void mime_dict_free();
 
 extern void status_table_init();
+
+typedef struct {
+  int err_page_fd;             /* fildes of err page */
+  const char *raw_err_page;    /* raw data of err page file */
+  size_t raw_page_size;        /* size of err page file */
+  buffer_t *rendered_err_page; /* buffer contains err msg */
+} err_page_t;
+
+extern int err_page_init();
+extern void err_page_free();
 
 extern void response_append_status_line(struct request *r);
 extern void response_append_date(struct request *r);

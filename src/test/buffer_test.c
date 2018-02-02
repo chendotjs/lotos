@@ -11,7 +11,7 @@ void test1() {
   lok(buffer->len == 3 && buffer->free == 7);
 
   lsequal(buffer->buf, "abc");
-  free(buffer);
+  buffer_free(buffer);
 }
 
 void test2() {
@@ -22,7 +22,7 @@ void test2() {
   lok(buffer->len == 10 && buffer->free == 0);
 
   lsequal(buffer->buf, "aaaaabbbbb");
-  free(buffer);
+  buffer_free(buffer);
 }
 
 void test3() {
@@ -33,7 +33,7 @@ void test3() {
   lok(buffer->len == 0 && buffer->free == 10);
 
   lsequal(buffer->buf, "");
-  free(buffer);
+  buffer_free(buffer);
 }
 
 void test4() {
@@ -46,7 +46,7 @@ void test4() {
   lok(buffer->len == 8 && buffer->free == 2);
 
   lsequal(buffer->buf, "abcdefgh");
-  free(buffer);
+  buffer_free(buffer);
 }
 
 void test5() {
@@ -64,7 +64,7 @@ void test5() {
   lok(buffer->len == 15 && buffer->free == 7);
   lsequal(buffer->buf, "abcdefghijkcstr");
 
-  free(buffer);
+  buffer_free(buffer);
 }
 
 void test6() {
@@ -80,7 +80,7 @@ void test6() {
   lequal(buffer->len, BUFFER_LIMIT + 3);
   lequal(buffer->free, BUFFER_LIMIT);
 
-  free(buffer);
+  buffer_free(buffer);
 }
 
 void test7() {
@@ -94,7 +94,7 @@ void test7() {
   lsequal(buffer->buf, "abc");
   lequal('c', *(buffer_end(buffer) - 1));
   lequal('b', *(buffer_end(buffer) - 2));
-  free(buffer);
+  buffer_free(buffer);
 }
 
 int main(int argc, char const *argv[]) {

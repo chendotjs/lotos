@@ -21,7 +21,7 @@ int lotos_epoll_mod(int epoll_fd, connection_t *c, uint32_t events,
 
 int lotos_epoll_del(int epoll_fd, connection_t *c, uint32_t events,
                     struct epoll_event *pev) {
-  (void)pev; // make compiler happy
+  (void)pev; /* Unused. Silent compiler warning. */
   return epoll_ctl(epoll_fd, EPOLL_CTL_DEL, c->fd, NULL);
 }
 

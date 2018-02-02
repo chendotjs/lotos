@@ -26,6 +26,7 @@ config_t server_config = {
     .timeout = 60,
     .worker = 4,
     .rootdir = NULL,
+    .rootdir_fd = -1,
 };
 
 int epoll_fd = -1;
@@ -75,6 +76,7 @@ static void sigint_handler(int signum) {
   if (signum == SIGINT) {
     mime_dict_free();
     header_handler_dict_free();
+    err_page_free();
 
     lotos_log(LOG_INFO, "lotos(%u) gracefully exit...", getpid());
     kill(-getpid(), SIGINT);
@@ -89,6 +91,7 @@ int server_setup(uint16_t port) {
   mime_dict_init();
   header_handler_dict_init();
   status_table_init();
+  err_page_init();
 
   listen_fd = make_server_socket(port, 1024);
   ABORT_ON(listen_fd == ERROR, "make_server_socket");

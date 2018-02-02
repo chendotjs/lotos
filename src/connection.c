@@ -149,6 +149,7 @@ connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
   get_internet_address(ip_addr, 32, &port, &c->saddr);
   lotos_log(LOG_INFO, "fd: %2d %s:%u\n", fd, ip_addr, port);
   lotos_log(LOG_INFO, "malloc %p %d\n", c, heap_size);
+  (void)heap_print; /* Unused. Silent compiler warning. */
 #endif
 
   return c;

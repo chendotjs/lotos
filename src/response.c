@@ -1,11 +1,20 @@
+#define _GNU_SOURCE
 #include "response.h"
 #include "buffer.h"
 #include "connection.h"
 #include "dict.h"
+#include "misc.h"
 #include "request.h"
+#include "server.h"
 #include "ssstr.h"
+#include <fcntl.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
+
+#define ERR_HEADER_MAX_LEN (BUFSIZ)
 
 static const char *status_table[512];
 
@@ -45,6 +54,35 @@ void status_table_init() {
 #define XX(num, name, string) status_table[num] = #num " " #string;
   HTTP_STATUS_MAP(XX);
 #undef XX
+}
+
+static err_page_t err_page;
+
+int err_page_init() {
+  err_page_t *ep = &err_page;
+  // open error.html
+  ep->err_page_fd = openat(server_config.rootdir_fd, "error.html", O_RDONLY);
+  ABORT_ON(ep->err_page_fd == ERROR, "openat");
+  struct stat st;
+  fstat(ep->err_page_fd, &st);
+  ep->raw_page_size = st.st_size;
+
+  ep->rendered_err_page = buffer_init(ep->raw_page_size + ERR_HEADER_MAX_LEN);
+  ABORT_ON(ep->rendered_err_page == NULL, "buffer_init");
+
+  // mmap file to memory
+  ep->raw_err_page =
+      mmap(NULL, ep->raw_page_size, PROT_READ, MAP_SHARED, ep->err_page_fd, 0);
+  ABORT_ON(ep->raw_err_page == NULL, "mmap");
+  return OK;
+}
+
+void err_page_free() {
+  err_page_t *ep = &err_page;
+  buffer_free(ep->rendered_err_page);
+  // munmap
+  munmap((void *)ep->raw_err_page, ep->raw_page_size);
+  close(ep->err_page_fd);
 }
 
 void response_append_status_line(struct request *r) {
