@@ -27,6 +27,7 @@ static int request_handle_body(request_t *r);
 static int response_handle_send_buffer(struct request *r);
 static int response_handle_send_file(struct request *r);
 static int response_assemble_buffer(struct request *r);
+static int response_assemble_err_buffer(struct request *r, int status_code);
 
 typedef int (*header_handle_method)(request_t *, size_t);
 /* handlers for specific http headers */
@@ -195,7 +196,8 @@ static int request_handle_request_line(request_t *r) {
 
   int fd = openat(server_config.rootdir_fd, relative_path, O_RDONLY);
   if (fd == ERROR) {
-    // TODO: send 404 error response to client
+    // send 404 error response to client
+    return response_assemble_err_buffer(r, 404);
   }
   struct stat st;
   fstat(fd, &st);
@@ -315,6 +317,7 @@ int request_handle_hd_content_length(request_t *r, size_t offset) {
   int len = atoi(content_length->str);
   if (len <= 0) {
     // TODO: send error response to client
+    return response_assemble_err_buffer(r, 400);
   }
   r->par.content_length = len;
   return OK;
@@ -441,12 +444,25 @@ int response_assemble_buffer(struct request *r) {
   return OK;
 }
 
-// TODO: 添加header
-int response_assemble_err_buffer(struct request *r) {
+int response_assemble_err_buffer(struct request *r, int status_code) {
+  r->req_handler = NULL;
+  r->par.err_req = TRUE;
+  r->status_code = status_code;
+
   response_append_status_line(r);
   response_append_date(r);
-
+  response_append_server(r);
+  response_append_content_type(r);
+  response_append_content_length(r);
   r->par.keep_alive = FALSE;
   response_append_connection(r);
+  response_append_crlf(r);
+
+  // add err page html
+  r->ob = buffer_cat_cstr(r->ob, err_page_render_buf());
+
+  connection_disable_in(epoll_fd, r->c);
+  connection_enable_out(epoll_fd, r->c);
+  r->par.response_done = TRUE;
   return OK;
 }

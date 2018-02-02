@@ -176,10 +176,11 @@ typedef struct {
   char *header_colon_pos;
   char *header_val_begin;
   char *header_val_end;
-  bool isCRLF_LINE;
   size_t body_received;
-  bool response_done;
   int buffer_sent;
+  bool isCRLF_LINE;
+  bool response_done;
+  bool err_req;
 } parse_archive;
 
 static inline void parse_archive_init(parse_archive *ar, buffer_t *b) {

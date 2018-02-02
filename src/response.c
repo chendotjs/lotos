@@ -85,18 +85,20 @@ void err_page_free() {
   close(ep->err_page_fd);
 }
 
+inline char *err_page_render_buf() { return err_page.rendered_err_page->buf; }
+
 void response_append_status_line(struct request *r) {
   buffer_t *b = r->ob;
   if (r->par.version.http_minor == 1) {
-    buffer_cat_cstr(b, "HTTP/1.1 ");
+    r->ob = buffer_cat_cstr(b, "HTTP/1.1 ");
   } else {
-    buffer_cat_cstr(b, "HTTP/1.0 ");
+    r->ob = buffer_cat_cstr(b, "HTTP/1.0 ");
   }
   // status
   const char *status_str = status_table[r->status_code];
   if (status_str != NULL)
-    buffer_cat_cstr(b, status_str);
-  buffer_cat_cstr(b, CRLF);
+    r->ob = buffer_cat_cstr(b, status_str);
+  r->ob = buffer_cat_cstr(b, CRLF);
 }
 
 void response_append_date(struct request *r) {
@@ -111,8 +113,8 @@ void response_append_date(struct request *r) {
 
 void response_append_server(struct request *r) {
   buffer_t *b = r->ob;
-  buffer_cat_cstr(b, "Server: ");
-  buffer_cat_cstr(b, SERVER_NAME CRLF);
+  r->ob = buffer_cat_cstr(b, "Server: ");
+  r->ob = buffer_cat_cstr(b, SERVER_NAME CRLF);
 }
 
 void response_append_content_type(struct request *r) {
@@ -120,23 +122,38 @@ void response_append_content_type(struct request *r) {
   parse_archive *ar = &r->par;
 
   ssstr_t content_type;
+  if (ar->err_req) {
+    content_type = SSSTR("text/html");
+    goto done;
+  }
   ssstr_t *v = dict_get(&mime_dict, &ar->url.mime_extension, NULL);
   if (v != NULL) {
     content_type = *v;
   } else {
     content_type = SSSTR("text/html");
   }
-  buffer_cat_cstr(b, "Content-Type: ");
-  buffer_cat_cstr(b, content_type.str);
-  buffer_cat_cstr(b, CRLF);
+done:;
+  r->ob = buffer_cat_cstr(b, "Content-Type: ");
+  r->ob = buffer_cat_cstr(b, content_type.str);
+  r->ob = buffer_cat_cstr(b, CRLF);
 }
 
 void response_append_content_length(struct request *r) {
   buffer_t *b = r->ob;
   char cl[128];
-  // TODO: modify content_length when sending err page
-  sprintf(cl, "Content-Length: %d" CRLF, r->resource_size);
-  buffer_cat_cstr(b, cl);
+  int len;
+  buffer_t *rendered_err_page = err_page.rendered_err_page;
+  // modify content_length when sending err page
+  if (r->par.err_req) {
+    len = snprintf(rendered_err_page->buf,
+                   rendered_err_page->free + rendered_err_page->len,
+                   err_page.raw_err_page, status_table[r->status_code]);
+    err_page.rendered_page_size = len;
+  } else {
+    len = r->resource_size;
+  }
+  sprintf(cl, "Content-Length: %d" CRLF, len);
+  r->ob = buffer_cat_cstr(b, cl);
 }
 
 void response_append_connection(struct request *r) {
@@ -147,11 +164,11 @@ void response_append_connection(struct request *r) {
   } else {
     connection = SSSTR("Connection: close");
   }
-  buffer_cat_cstr(b, connection.str);
-  buffer_cat_cstr(b, CRLF);
+  r->ob = buffer_cat_cstr(b, connection.str);
+  r->ob = buffer_cat_cstr(b, CRLF);
 }
 
 void response_append_crlf(struct request *r) {
   buffer_t *b = r->ob;
-  buffer_cat_cstr(b, CRLF);
+  r->ob = buffer_cat_cstr(b, CRLF);
 }
