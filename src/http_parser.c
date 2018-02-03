@@ -460,7 +460,6 @@ parse_extension:;
 int parse_header_body_identity(buffer_t *b, parse_archive *ar) {
   if (ar->content_length <= 0)
     return OK;
-
   // not that complicated, using `next_parse_pos` to indicate where to parse
   size_t received = buffer_end(b) - ar->next_parse_pos;
   ar->body_received += received;
@@ -470,8 +469,8 @@ int parse_header_body_identity(buffer_t *b, parse_archive *ar) {
 #endif
   ar->next_parse_pos = buffer_end(b);
 
-  if (ar->body_received >= ar->content_length) {
+  if (ar->body_received >= ar->content_length) { // full data recv
     return OK;
   }
-  return AGAIN;
+  return AGAIN; // will conitinue to recv until full data recv or conn timeout
 }

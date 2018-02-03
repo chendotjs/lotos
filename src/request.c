@@ -171,14 +171,15 @@ static int request_handle_request_line(request_t *r) {
   if (status == AGAIN) // not a complete request line
     return AGAIN;
   if (status != OK) { // INVALID_REQUEST
-    // TODO: send error response to client
-    return status;
+    // send error response to client
+    return response_assemble_err_buffer(r, 400);
   }
   // status = OK now
   parse_archive *ar = &(r->par);
   /* check http version */
   if (ar->version.http_major > 1 || ar->version.http_minor > 1) {
-    // TODO: send 505 error response to client
+    // send 505 error response to client
+    return response_assemble_err_buffer(r, 505);
   }
   ar->keep_alive = (ar->version.http_major == 1 && ar->version.http_minor == 1);
 
@@ -207,7 +208,8 @@ static int request_handle_request_line(request_t *r) {
     int html_fd = openat(fd, "index.html", O_RDONLY);
     close(fd);
     if (fd == ERROR) {
-      // TODO: send 404 error response to client
+      // send 404 error response to client
+      return response_assemble_err_buffer(r, 404);
     }
     fd = html_fd;
     fstat(fd, &st);
@@ -231,8 +233,8 @@ static int request_handle_headers(request_t *r) {
       return AGAIN;
     /* header invalid */
     case INVALID_REQUEST:
-      // TODO: send error response to client
-      return ERROR;
+      // send error response to client
+      return response_assemble_err_buffer(r, 400);
     /* all headers completed */
     case CRLF_LINE:
       goto header_done;
@@ -269,7 +271,6 @@ static int request_handle_body(request_t *r) {
     break;
   default:
     status = ERROR;
-    // TODO: send error response to client
     break;
   }
 
@@ -283,10 +284,9 @@ static int request_handle_body(request_t *r) {
     response_assemble_buffer(r);
     return OK;
   default:
-    // TODO: send error response to client
-    break;
+    // send error response to client
+    return response_assemble_err_buffer(r, 501);
   }
-
   return OK;
 }
 
@@ -306,7 +306,8 @@ int request_handle_hd_connection(request_t *r, size_t offset) {
   } else if (ssstr_caseequal(connection, "close")) {
     r->par.keep_alive = FALSE;
   } else {
-    // TODO: send error response to client
+    // send error response to client
+    return response_assemble_err_buffer(r, 400);
   }
   return OK;
 }
@@ -316,7 +317,7 @@ int request_handle_hd_content_length(request_t *r, size_t offset) {
   ssstr_t *content_length = &(r->par.req_headers.content_length);
   int len = atoi(content_length->str);
   if (len <= 0) {
-    // TODO: send error response to client
+    // send error response to client
     return response_assemble_err_buffer(r, 400);
   }
   r->par.content_length = len;
@@ -329,21 +330,27 @@ int request_handle_hd_transfer_encoding(request_t *r, size_t offset) {
   request_handle_hd_base(r, offset);
   ssstr_t *transfer_encoding = &(r->par.req_headers.transfer_encoding);
   if (ssstr_caseequal(transfer_encoding, "chunked")) {
-    // TODO: may implement, send error response to client
+    // may implement, send error response to client
     r->par.transfer_encoding = TE_CHUNKED;
+    return response_assemble_err_buffer(r, 501);
   } else if (ssstr_caseequal(transfer_encoding, "compress")) {
-    // TODO: send error response to client
+    // send error response to client
     r->par.transfer_encoding = TE_COMPRESS;
+    return response_assemble_err_buffer(r, 501);
   } else if (ssstr_caseequal(transfer_encoding, "deflate")) {
-    // TODO: send error response to client
+    // send error response to client
     r->par.transfer_encoding = TE_DEFLATE;
+    return response_assemble_err_buffer(r, 501);
   } else if (ssstr_caseequal(transfer_encoding, "gzip")) {
-    // TODO: send error response to client
+    // send error response to client
     r->par.transfer_encoding = TE_GZIP;
+    return response_assemble_err_buffer(r, 501);
   } else if (ssstr_caseequal(transfer_encoding, "identity")) {
     r->par.transfer_encoding = TE_IDENTITY;
+    return response_assemble_err_buffer(r, 501);
   } else {
-    // TODO: send error response to client
+    // send error response to client
+    return response_assemble_err_buffer(r, 400);
   }
   return OK;
 }
