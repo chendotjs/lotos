@@ -1,5 +1,5 @@
 /**
- * ./slow_client 8888 [1-9]
+ * ./slow_client 8888 [0-9]
  */
 
 #define _GNU_SOURCE
@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -35,7 +36,7 @@ const char *requests[] = {
     "\r\n",
 
 #define CURL_GET 1
-    "GET /test HTTP/1.1\r\n"
+    "GET / HTTP/1.1\r\n"
     "User-Agent: curl/7.18.0 (i486-pc-linux-gnu) "
     "libcurl/7.18.0 OpenSSL/0.9.8g zlib/1.2.3.3 "
     "libidn/1.1\r\n"
@@ -66,13 +67,13 @@ const char *requests[] = {
     "World",
 
 #define GET_FUNKY_CONTENT_LENGTH 4
-    "GET /get_funky_content_length_body_hello HTTP/1.0\r\n"
+    "GET / HTTP/1.0\r\n"
     "conTENT-Length: 5\r\n"
     "\r\n"
     "HELLO",
 
 #define POST_CHUNKED_ALL_YOUR_BASE 5
-    "POST /post_chunked_all_your_base HTTP/1.1\r\n"
+    "POST / HTTP/1.1\r\n"
     "Transfer-Encoding: chunked\r\n"
     "\r\n"
     "1e\r\nall your base are belong to us\r\n"
@@ -99,11 +100,14 @@ int connect_to_server(uint16_t port) {
 }
 
 int main(int argc, char *argv[]) {
+  int fd, opt;
   if (argc < 3) {
-    return 0;
+    printf("Usage: %s port [0-5]\n", argv[0]);
+    return 1;
   }
-  int fd = connect_to_server(atoi(argv[1]));
-  int opt = atoi(argv[2]);
+  signal(SIGPIPE, SIG_IGN);
+  fd = connect_to_server(atoi(argv[1]));
+  opt = atoi(argv[2]);
 
   if (opt >= sizeof(requests) / sizeof(requests[0]))
     return 1;
@@ -111,7 +115,10 @@ int main(int argc, char *argv[]) {
   /* send begin */
   for (size_t i = 0; i < strlen(requests[opt]); i++) {
     int ch = requests[opt][i];
-    assert(1 == send(fd, &ch, 1, 0));
+    if (-1 == send(fd, &ch, 1, 0)) {
+      perror("send"); // probably broken pipe
+      break;
+    }
     printf("%c", ch);
     fflush(stdout);
     usleep(30 * 1000);
@@ -119,6 +126,7 @@ int main(int argc, char *argv[]) {
   /* send end */
 
   /* recv begin */
+  printf("\n\n***************Recv**************\n\n");
   while (1) {
     int ch;
     int len = recv(fd, &ch, 1, 0);
