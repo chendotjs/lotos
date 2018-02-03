@@ -406,13 +406,11 @@ int response_handle_send_buffer(struct request *r) {
   if (status != OK) {
     return status;
   } else {
-    // TODO: read err page and sendfile
     if (r->resource_fd != -1) {
       r->res_handler = response_handle_send_file;
       return OK;
     }
-
-    // TODO:
+    r->par.response_done = TRUE;
     connection_disable_out(epoll_fd, r->c);
     return OK;
   }
