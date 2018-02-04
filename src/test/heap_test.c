@@ -1,6 +1,6 @@
 #include "../connection.h"
 #include "../misc.h"
-#include "minctest/minctest.h"
+#include "minctest.h"
 #include <stdio.h>
 #include <string.h>
 

@@ -2,7 +2,7 @@
 #include "../http_parser.h"
 #include "../misc.h"
 #include "../ssstr.h"
-#include "minctest/minctest.h"
+#include "minctest.h"
 #include <stdio.h>
 #include <string.h>
 

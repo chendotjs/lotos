@@ -51,6 +51,11 @@ int config_parse(int argc, char *argv[]) {
       break;
     case 'w':
       server_config.worker = atoi(optarg);
+      if (server_config.worker > sysconf(_SC_NPROCESSORS_ONLN)) {
+        fprintf(stderr,
+                "Config ERROR: worker num greater than cpu available cores.\n");
+        return ERROR;
+      }
       break;
     case 'r':
       server_config.rootdir = optarg;
@@ -78,7 +83,7 @@ static void sigint_handler(int signum) {
     header_handler_dict_free();
     err_page_free();
 
-    lotos_log(LOG_INFO, "lotos(%u) gracefully exit...", getpid());
+    lotos_log(LOG_INFO, "lotos(PID: %u) exit...", getpid());
     kill(-getpid(), SIGINT);
     exit(0);
   }
