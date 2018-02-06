@@ -72,11 +72,11 @@ work:;
         connection_t *c = curr_event->data.ptr;
         int status;
         assert(c != NULL);
-        /**
-         * if use slow_client, every time will recv only 1 byte.When to decide
-         * the connection has recv enough data?
-         */
-        if (!connecion_is_expired(c) && (curr_event->events & EPOLLIN)) {
+
+        if (connecion_is_expired(c))
+          continue;
+
+        if (curr_event->events & EPOLLIN) {
           // recv
           status = request_handle(c);
           if (status == ERROR)
@@ -84,7 +84,7 @@ work:;
           else
             connecion_set_reactivated(c);
         }
-        if (!connecion_is_expired(c) && (curr_event->events & EPOLLOUT)) {
+        if (curr_event->events & EPOLLOUT) {
           // send
           status = response_handle(c);
           if (status == ERROR)
