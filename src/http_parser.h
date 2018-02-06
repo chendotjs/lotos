@@ -150,12 +150,7 @@ typedef struct {
   http_version version;
   ssstr_t request_url_string;
   req_url url;
-#if 0
-  ssstr_t request_path;
-  ssstr_t query_string;
-  ssstr_t mime_extension;
-#endif
-
+  
   /* parsed header lines result */
   bool keep_alive;       /* connection keep alive */
   int content_length;    /* request body content_length */
