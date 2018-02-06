@@ -2,11 +2,12 @@
 #define _DICT_H__
 
 /**
- * dict used with a small amout of data, no need to rehash
+ * dict used with a small amount of data, no need to rehash
  */
 
 #include "misc.h"
 #include "ssstr.h"
+#include <string.h>
 
 #define DICT_MASK_SIZE (0xFF)
 
