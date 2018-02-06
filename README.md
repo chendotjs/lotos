@@ -18,9 +18,9 @@ SUM:                            35            470            396           3130
 
 ## Documents
 
-0x01                     | 0x02 | 0x03
------------------------- | ---- | ----
-[项目目的](./doc/PURPOSE.md) | TODO | TODO
+0x01                     | 0x02                               | 0x03
+------------------------ | ---------------------------------- | ----
+[项目目的](./doc/PURPOSE.md) | [并发模型](./doc/CONCURRENCY_MODEL.md) | TODO
 
 ## Environment
 
