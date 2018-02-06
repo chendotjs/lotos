@@ -6,22 +6,21 @@
 -------------------------------------------------------------------------------
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C                               17            328            269           2275
+C                               17            330            265           2277
 C/C++ Header                    11            117            131            500
 XML                              4              0              0            297
 make                             2             16              0             38
 CMake                            1              7              0             18
 -------------------------------------------------------------------------------
-SUM:                            35            468            400           3128
+SUM:                            35            470            396           3130
 -------------------------------------------------------------------------------
-
 ```
 
 ## Documents
 
-0x01 | 0x02 | 0x03
----- | ---- | ----
-TODO | TODO | TODO
+0x01                     | 0x02 | 0x03
+------------------------ | ---- | ----
+[项目目的](./doc/PURPOSE.md) | TODO | TODO
 
 ## Environment
 
@@ -51,10 +50,10 @@ then you can visit <http://localhost:8888/>.
 ## Feature
 
 - EPOLL Edge Trigger mode, more efficient.
-- Nonblocking IO
+- Nonblocking IO.
 - Multiprocessing, port reuse.
 - TCP connections managed by min-heap data structure.
-- HTTP persistent connection. Auto close TCP connection when connection expires.
+- HTTP persistent connection support. Close TCP connection when connection expires.
 - Parse HTTP requests using FSM.
 - Handle errors and exceptions.
 
