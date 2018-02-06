@@ -2,6 +2,21 @@
 
 **Lotos is a tiny but high-performance HTTP WebServer following the Reactor model, using non-blocking IO and IO multiplexing(epoll ET) to handle concurrency. Lotos is written in pure c and well tested. Several HTTP headers (Connection, Content-Length, etc.) is supported and more will be added in the future.**
 
+```
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+C                               17            328            269           2275
+C/C++ Header                    11            117            131            500
+XML                              4              0              0            297
+make                             2             16              0             38
+CMake                            1              7              0             18
+-------------------------------------------------------------------------------
+SUM:                            35            468            400           3128
+-------------------------------------------------------------------------------
+
+```
+
 ## Documents
 
 0x01 | 0x02 | 0x03
