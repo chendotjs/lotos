@@ -1,0 +1,23 @@
+digraph structs {
+  rankdir=LR
+  node [shape=record];
+  struct1 [label="<f0> dict_t|<f1> table|<f2> size_mask|<f3> used"];
+  struct2 [label="<f0> dict_node_t|<f1> 0|<f2> 1|<f3> 2|<f4> ...|<f5> 254|<f6> 255"];
+  struct3 [label="NULL"]
+  struct4 [label="NULL"]
+  struct5 [label="NULL"]
+  struct6 [label="NULL"]
+  struct7[label="<f0> dict_node_t| { k | v | <next>next }"]
+  struct8[label="<f0> dict_node_t| { k | v | <next>next }"]
+  struct9 [label="NULL"]
+
+  struct1:f1 -> struct2:f0;
+  struct2:f1 -> struct3;
+  struct2:f2 -> struct4;
+  struct2:f5 -> struct5;
+  struct2:f6 -> struct6;
+
+  struct2:f3 -> struct7;
+  struct7:next -> struct8;
+  struct8:next -> struct9;
+}

@@ -135,7 +135,7 @@ connection.c实现了一个最小二叉堆， 依据每个connection的active_ti
 
 实现了一个简单的HashMap。将其结构画出来，应该也是很一目了然的。
 
-//TODO: use graphviz
+![](./dot/dict_structure.png)
 
 有一个小细节需要注意，通常我们需要把hash函数算出来的hash值映射回一个HashMap数组的对应位置，使其可以被加入索引。虽然最简单直接的想法是通过取模运算(%)，但是%运算比较低效，在大规模的查询/插入操作时很费CPU时间。换一个方式，我们可以规定的HashMap数组的长度为2的幂(如16,32,64...)，这样数组的范围就是[0, 2^n-1]，映射回HashMap数组的对应方法可以是 `index = Hash(key) & (Length - 1)`。这样`Length - 1`的二进制低位就全是1，如此可以均匀地把key映射到数组中。Lotos的实现中，HashMap的数组长度定为256，可以通过修改`DICT_MASK_SIZE`宏来改变数组长度。
 
@@ -250,4 +250,4 @@ NIO决定了每一个IO操作的状态包含三种：OK， ERROR， AGAIN。Loto
 
 ## 0x07 错误处理
 
-作为一个长时间跑在后台的程序而言，需要足够健壮，需要对错误处理做足功夫。调试时就遇到[使用wrk压力测试时，程序退出没有任何错误的假象](./DEBUG_LOG.md)，原因是对于SIGPIPE没有做正确的处理。在编写代码时候需要对每个syscall做错误检查，否则调试时定位bug则会困难许多。保证内存没有泄露也是很重要的一点，用valgrind测试是最简单的方式。
+作为一个长时间跑在后台的程序而言，需要足够健壮，需要对错误处理做足功夫。调试时就遇到[使用wrk压力测试时，程序退出没有任何错误的假象](./DEBUG_LOG.md)，原因是对于SIGPIPE没有做正确的处理。<https://github.com/chendotjs/snippets/tree/master/network>中给出了触发网络编程中两个常见错误`Connection reset by peer` 和`Broken pipe`的示例代码。在编写代码时候需要对每个syscall做错误检查，否则调试时定位bug则会困难许多。保证内存没有泄露也是很重要的一点，用valgrind测试是最简单的方式。

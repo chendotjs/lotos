@@ -1,5 +1,7 @@
 # Lotos WebServer
 
+[![Build Status](https://travis-ci.org/chendotjs/lotos.svg?branch=master)](https://travis-ci.org/chendotjs/lotos)
+
 **Lotos is a tiny but high-performance HTTP WebServer following the Reactor model, using non-blocking IO and IO multiplexing(epoll ET) to handle concurrency. Lotos is written in pure c and well tested. Several HTTP headers (Connection, Content-Length, etc.) is supported and more will be added in the future.**
 
 ```
