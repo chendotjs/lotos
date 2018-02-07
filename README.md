@@ -26,7 +26,7 @@ SUM:                            35            470            396           3130
 
 ## Environment
 
-- gcc >= 5.4 or clang >= 3.5 (gcc4.9 is not unsupported)
+- gcc >= 5.4 or clang >= 3.5 (gcc4.9 is not supported)
 - Linux only, kernel version >= 3.9
 
 ## Usage
