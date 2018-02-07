@@ -1,16 +1,16 @@
-### Dev&Debug tools
+# 测试调试
+
+## 调试工具
 
 - nc
 - curl
 - wrk
-- ipython
 - gdb
 - valgrind
+- perf
 
+## 测试
 
-### Test examples
+对每一个数据结构都写了简单的单元测试。我不敢说测试很充分，但是主要的功能点还是测试到了在开发过程中多次大块修改代码结构，测试能跑过就可以比较安心，有单元测试对于重构代码帮助很大！
 
-- wrk
-- ab
-- slow client together with wrk
-- large request
+[设计实现](./DESIGN.md)里面说过，NIO决定了每一个IO操作的状态包含三种：OK， ERROR， AGAIN。健壮的服务器应该能处理这种慢请求，因此测试代码也实现了一个[慢速client](../src/test/slow_client.c)，每隔30ms发送一个字节给服务器，测试服务器能否正确解析。client里面已经内置了一些请求体。

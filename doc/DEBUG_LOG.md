@@ -202,3 +202,25 @@ epoll: 1
   lotos的设计上确实也是http headers和body分开发送，所以headers被立即发送("send data immediately")，body则被放在缓冲区里面("enqueue data in the buffer until an acknowledge is received")，直到对面40ms的超时ACK来临，才会把body发送出去。
 
   好吧，虽然我知道很多服务器都设置TCP_NODELAY，包括nginx，以前也只是经验性的设置一下该选项，直到今天踩了坑，才对这玩意有更深的理解。调试过程也是一个学习成长的过程！
+
+
+# 问题2
+
+## 问题描述
+
+使用wrk压力测试时候，程序莫名退出，也没有打印出任何错误信息。
+
+## Debug记录
+
+掏出gdb，在gdb中运行，然后使用wrk压力测试。
+
+```
+Program received signal SIGPIPE, Broken pipe.
+0x00007ffff7b1751d in send () from /usr/lib/libc.so.6
+```
+
+恍然大悟，原来是没有处理SIGPIPE。[`man 7 pipe`](https://linux.die.net/man/7/pipe)中写的很清楚。
+
+> If all file descriptors referring to the write end of a pipe have been closed, then an attempt to read(2) from the pipe will see end-of-file (read(2) will return 0). If all file descriptors referring to the read end of a pipe have been closed, then a write(2) will cause a SIGPIPE signal to be generated for the calling process. If the calling process is ignoring this signal, then write(2) fails with the error EPIPE. An application that uses pipe(2) and fork(2) should use suitable close(2) calls to close unnecessary duplicate file descriptors; this ensures that end-of-file and SIGPIPE/EPIPE are delivered when appropriate.
+
+当对端关闭了连接，并且本端忽略了SIGPIPE信号，那么`write`系统调用会失败并且设置errno为EPIPE。

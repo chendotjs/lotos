@@ -121,16 +121,133 @@ typedef struct {
 
 ## 0x02 数据结构
 
-### 1.最小堆
+### 1.最小堆(connection.c)
 
-### 2.HashMap
+connection.c实现了一个最小二叉堆， 依据每个connection的active_time比较大小。因为二叉堆是一个完全二叉树的形态，为了简化编程，可以使用数组来存储堆结点。假设堆顶的position为0，按照层次遍历（BFS）的顺序编号，那么position为`i`的结点，左孩子的position为`2*i+1`, 右孩子的position为`2*i+2`。有了这层关系，可以通过position很快定位到孩子或者父结点的位置。
 
-buffer_t 和 parser 紧密耦合，与其他部件解耦，可以进行模拟测试。request_t包含这两者，让两者耦合
+在这样的基础上，实现了以下操作：
 
-为了性能，抽象出ssstr_t类型作为parser_archive成员，避免了内存的拷贝
+- heap_bubble_up
+- heap_bubble_down
+- heap_insert
 
-# 测试
+### 2.HashMap(dict.c)
 
-写了简单的单元测试，在开发过程中多次修改结构，有单元测试对于重构帮助很大
+实现了一个简单的HashMap。将其结构画出来，应该也是很一目了然的。
 
-并发的瓶颈不在于内存的malloc和free（有内存池更好），如果可以利用HTTP/1.1中keep-alive功能，加入Content-Length或者Chunked可以极大增加并发数.
+//TODO: use graphviz
+
+有一个小细节需要注意，通常我们需要把hash函数算出来的hash值映射回一个HashMap数组的对应位置，使其可以被加入索引。虽然最简单直接的想法是通过取模运算(%)，但是%运算比较低效，在大规模的查询/插入操作时很费CPU时间。换一个方式，我们可以规定的HashMap数组的长度为2的幂(如16,32,64...)，这样数组的范围就是[0, 2^n-1]，映射回HashMap数组的对应方法可以是 `index = Hash(key) & (Length - 1)`。这样`Length - 1`的二进制低位就全是1，如此可以均匀地把key映射到数组中。Lotos的实现中，HashMap的数组长度定为256，可以通过修改`DICT_MASK_SIZE`宏来改变数组长度。
+
+在Lotos中，HashMap的使用场景数据量比较小，就没有考虑负载因子、rehash等因素，仅仅实现了最简单的功能。
+
+- dict_init
+- dict_put
+- dict_get
+- dict_free
+
+## 0x03 NIO配合epoll
+
+所有关于epoll的问题几乎都可以在[`man 7 epoll`](https://linux.die.net/man/7/epoll)中找到。manual写的很详细了，也给了服务器处理事件循环的样例代码，大部分采用epoll的服务器结构无外乎如此。
+
+```c
+
+/* Set up listening socket, 'listen_sock' (socket(),
+   bind(), listen()) */
+
+epollfd = epoll_create(10);
+if (epollfd == -1) {
+    perror("epoll_create");
+    exit(EXIT_FAILURE);
+}
+
+ev.events = EPOLLIN;
+ev.data.fd = listen_sock;
+if (epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_sock, &ev) == -1) {
+    perror("epoll_ctl: listen_sock");
+    exit(EXIT_FAILURE);
+}
+
+for (;;) {
+    nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+    if (nfds == -1) {
+        perror("epoll_pwait");
+        exit(EXIT_FAILURE);
+    }
+
+   for (n = 0; n < nfds; ++n) {
+        if (events[n].data.fd == listen_sock) {
+            conn_sock = accept(listen_sock,
+                            (struct sockaddr *) &local, &addrlen);
+            if (conn_sock == -1) {
+                perror("accept");
+                exit(EXIT_FAILURE);
+            }
+            setnonblocking(conn_sock);
+            ev.events = EPOLLIN | EPOLLET;
+            ev.data.fd = conn_sock;
+            if (epoll_ctl(epollfd, EPOLL_CTL_ADD, conn_sock,
+                        &ev) == -1) {
+                perror("epoll_ctl: conn_sock");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            do_use_fd(events[n].data.fd);
+        }
+    }
+}
+```
+
+epoll中很重要的一个结构体类型是`struct epoll_event`， 它包含了一个`epoll_data_t`类型的联合对象`data`。
+
+```c
+typedef union epoll_data {
+  void *ptr;
+  int fd;
+  uint32_t u32;
+  uint64_t u64;
+} epoll_data_t;
+
+struct epoll_event {
+  uint32_t events;   /* Epoll events */
+  epoll_data_t data; /* User data variable */
+};
+```
+
+样例代码中`ev.data.fd = conn_sock;`，直接使用`fd`成员存储新建立连接的文件描述符，这样做简洁明了，但是需要额外的代码去描述一个连接的状态。在Lotos中使用了`connection_t`类型来描述一个连接的属性和状态，所以Lotos使用了`ptr`成员来保存`connection_t`实例的地址。
+
+## 0x04 长连接与超时关闭
+
+相比于HTTP/1.0，在服务器端发送完数据后关闭文件描述符即可，HTTP/1.1支持长连接，这就需要考虑连接的超时关闭问题，否则大量的非活动连接会消耗尽系统资源。
+
+Lotos将所有连接注册进一个最小堆，active_time表示该连接上次活动的Epoch时间，active_time越小，表明该连接上次活动时间越早，越有可能超时。当连接建立或者有IO操作时，active_time会被更新，并且在堆中的位置会做相应调整。在每次的事件循环中，都会检查一下堆顶的连接是否超时(connection_prune函数)，若超时则关闭连接、移出最小堆。对连接的操作中假若出现了错误，需要关闭连接，最简单的办法是将其active_time设为很小的一个值(比如0)，然后等待connection_prune函数将其移除。
+
+## 0x05 HTTP请求解析
+
+对于HTTP请求体的解析，可以采用有穷状态机(FSM)逐个字母匹配，也可以采用简单的字符串匹配方式。 由于Lotos采用了NIO，不一定可以一次得到完整的请求体(这点在[测试调试](./DEBUG.md)部分也有体现)，所以保存连接请求的解析状态是必不可少的工作，否则每次请求体到来之后从头解析就显得愚钝了。状态机恰好可以可以满足这种需求，写起来也不是特别复杂，[RFC2016](https://www.w3.org/Protocols/rfc2616/rfc2616.html)已经给出了BNF范式，照着BNF范式逐字匹配即可，遇到对不上的请求体返回错误即可。Lotos目前实现了Request Line、Header和部分Body的解析，解析代码都在[http_parser.c](../src/http_parser.c)中，解析的结果保存在`parse_archive`类型的结构体中，`request_t`类型有一个`parse_archive`类型的成员`par`，用来记录每个请求解析的状态以及结果。
+
+## 0x06 状态管理
+
+NIO决定了每一个IO操作的状态包含三种：OK， ERROR， AGAIN。Lotos中有两个函数`int request_recv(request_t *r)`和`int response_send(request_t *r)`用于接受和发送数据。在这里三个状态对应的语义应该是：
+
+对于`request_recv`:
+
+- OK: 读到EOF，对端正常关闭连接，无需再读
+- ERROR: 错误，需要进入错误处理环节，如断开连接
+- AGAIN: 还有数据等待读取，等待下次再读
+
+对于`response_send`:
+
+- OK: 全部数据已经发送(并不代表对端收到)，无需再发
+- ERROR: 错误，需要进入错误处理环节，如断开连接
+- AGAIN: 还有数据等待发送，等待下次再发
+
+请求体的状态判定不仅和IO操作的状态相关，也与HTTP协议解析是耦合的。比如对端发出`GE`，在HTTP请求解析模块里，这一部分是合法的请求，但并不完整，我们很大程度上相信这将会是一个HTTP GET请求，所以我们需要再次recv获得更多请求体才能确定。如果接下又收到`T / HTTP/1.0`，那么认为该次请求的Request Line是OK的，否则就是ERROR。所以需要赋予请求的每个状态更明确的语义。
+
+- OK: 请求是合法的
+- ERROR: 错误，需要进入错误处理环节，如断开连接
+- AGAIN: 请求体目前是合法的，但不完整，需要再读
+
+## 0x07 错误处理
+
+作为一个长时间跑在后台的程序而言，需要足够健壮，需要对错误处理做足功夫。调试时就遇到[使用wrk压力测试时，程序退出没有任何错误的假象](./DEBUG_LOG.md)，原因是对于SIGPIPE没有做正确的处理。在编写代码时候需要对每个syscall做错误检查，否则调试时定位bug则会困难许多。保证内存没有泄露也是很重要的一点，用valgrind测试是最简单的方式。

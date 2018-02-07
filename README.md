@@ -18,9 +18,9 @@ SUM:                            35            470            396           3130
 
 ## Documents
 
-0x01                     | 0x02                               | 0x03
------------------------- | ---------------------------------- | ----
-[项目目的](./doc/PURPOSE.md) | [并发模型](./doc/CONCURRENCY_MODEL.md) | TODO
+0x01                     | 0x02                               | 0x03                    | 0x04                   | 0x05                       | 0x06
+------------------------ | ---------------------------------- | ----------------------- | ---------------------- | -------------------------- | --------------------------
+[项目目的](./doc/PURPOSE.md) | [并发模型](./doc/CONCURRENCY_MODEL.md) | [设计实现](./doc/DESIGN.md) | [测试调试](./doc/DEBUG.md) | [性能测试](./doc/BENCHMARK.md) | [调试记录](./doc/DEBUG_LOG.md)
 
 ## Environment
 
@@ -66,3 +66,11 @@ Moreover, I contributed some codes to it.
 ## Benchmark
 
 Please refer to [BENCHMARK.md](./doc/BENCHMARK.md).
+
+## Reference
+
+[nginx](https://github.com/nginx/nginx)
+
+[node.js http parser](https://github.com/nodejs/http-parser)
+
+[Tkeed](https://github.com/linw7/TKeed)
