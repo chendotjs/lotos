@@ -1,5 +1,6 @@
 #ifndef _SERVER_H__
 #define _SERVER_H__
+#include "mem_pool.h"
 #include "misc.h"
 #include <netinet/in.h>
 #include <stdint.h>
@@ -27,5 +28,9 @@ extern int server_accept(int listen_fd); /* accpet all connections */
 extern int
 get_internet_address(char *host, int len, uint16_t *pport,
                      struct sockaddr_in *paddr); /* get ip/port info */
+
+#if USE_MEM_POOL
+extern mem_pool_t connection_pool;
+#endif
 
 #endif

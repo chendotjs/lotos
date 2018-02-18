@@ -11,7 +11,7 @@ endif()
 message(STATUS "Host is: ${CMAKE_HOST_SYSTEM}.  Build target is: ${CMAKE_SYSTEM}")
 
 set(SRC
-  buffer.c  connection.c  dict.c  http_parser.c  lotos_epoll.c  main.c  misc.c  request.c  response.c  server.c  ssstr.c
+  buffer.c  connection.c  dict.c  http_parser.c  lotos_epoll.c  main.c  misc.c  request.c  response.c  server.c  ssstr.c mem_pool.c
 )
 
 

@@ -1,9 +1,9 @@
 #define _GNU_SOURCE
-#include "server.h"
 #include "connection.h"
 #include "lotos_epoll.h"
 #include "misc.h"
 #include "response.h"
+#include "server.h"
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
@@ -31,6 +31,10 @@ config_t server_config = {
 
 int epoll_fd = -1;
 int listen_fd = -1;
+
+#if USE_MEM_POOL
+mem_pool_t connection_pool;
+#endif
 
 static void sigint_handler(int signum);
 static int make_server_socket(uint16_t port, int backlog);
@@ -82,7 +86,9 @@ static void sigint_handler(int signum) {
     mime_dict_free();
     header_handler_dict_free();
     err_page_free();
-
+#if USE_MEM_POOL
+    pool_destroy(&connection_pool);
+#endif
     lotos_log(LOG_INFO, "lotos(PID: %u) exit...", getpid());
     kill(-getpid(), SIGINT);
     exit(0);
@@ -97,6 +103,9 @@ int server_setup(uint16_t port) {
   header_handler_dict_init();
   status_table_init();
   err_page_init();
+#if USE_MEM_POOL
+  pool_create(&connection_pool, 1024, sizeof(connection_t));
+#endif
 
   listen_fd = make_server_socket(port, 1024);
   ABORT_ON(listen_fd == ERROR, "make_server_socket");

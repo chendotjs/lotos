@@ -103,12 +103,20 @@ static inline void connection_set_nodelay(connection_t *c) {
 }
 
 connection_t *connection_init() {
-  // Too many malloc would be slow, but mem pool seems not popular right now.
+// Too many malloc would be slow, but mem pool seems not popular right now.
+#if USE_MEM_POOL
+  connection_t *c = pool_alloc(&connection_pool);
+#else
   connection_t *c = malloc(sizeof(connection_t));
+#endif
   // init request
   if (c) {
     if (request_init(&c->req, c) == ERROR) {
+#if USE_MEM_POOL
+      pool_free(&connection_pool, c);
+#else
       free(c);
+#endif
       c = NULL;
     }
   }
@@ -116,7 +124,6 @@ connection_t *connection_init() {
 }
 
 connection_t *connection_accept(int fd, struct sockaddr_in *paddr) {
-  // Too many malloc would be slow, but mem pool seems not popular right now.
   connection_t *c = connection_init();
   assert(c != NULL);
   if (c == NULL) { // malloc fail
@@ -176,7 +183,11 @@ static inline void connection_free(connection_t *c) {
     c->req.ib = NULL;
     buffer_free(c->req.ob);
     c->req.ob = NULL;
+#if USE_MEM_POOL
+    pool_free(&connection_pool, c);
+#else
     free(c);
+#endif
   }
 }
 
