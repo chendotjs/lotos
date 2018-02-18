@@ -58,6 +58,7 @@ then you can visit <http://localhost:8888/>.
 - HTTP persistent connection support. Close TCP connection when connection expires.
 - Parse HTTP requests using FSM.
 - Handle errors and exceptions.
+- Memory pool is optional.
 
 ## Test
 
