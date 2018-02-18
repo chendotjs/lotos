@@ -2,7 +2,7 @@ CFLAGS=-std=c99 -Wall -O3 -DNDEBUG
 OPTFLAGS=
 
 OBJS=misc.o ssstr.o dict.o lotos_epoll.o buffer.o request.o response.o \
- connection.o http_parser.o server.o main.o
+ connection.o http_parser.o server.o mem_pool.o main.o
 
 lotos : $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@ $(OPTFLAGS)
